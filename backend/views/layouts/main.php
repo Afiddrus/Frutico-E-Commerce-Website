@@ -11,7 +11,16 @@ use yii\bootstrap5\Nav;
 use yii\bootstrap5\NavBar;
 use yii\helpers\Url;
 
+if (Yii::$app->user->isGuest) {
+    Yii::$app->getResponse()->redirect(Url::to(['/site/login']))->send();
+    Yii::$app->end();
+}
+
+$this->title = 'Admin FRUTICO';
 AppAsset::register($this);
+
+$superAdmin = Yii::$app->user->identity->status == 12;
+
 ?>
 <?php $this->beginPage() ?>
 <!DOCTYPE html>
@@ -36,7 +45,7 @@ AppAsset::register($this);
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
-                <div class="sidebar-brand-text mx-3">Buah Market <sup></sup></div>
+                <div class="sidebar-brand-text mx-3">FRUTICO <sup></sup></div>
             </a>
 
             <!-- Divider -->
@@ -44,7 +53,7 @@ AppAsset::register($this);
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item active">
-                <a class="nav-link" href="index.html">
+                <a class="nav-link" href="<?php echo Yii::$app->homeUrl ?>">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
@@ -58,18 +67,31 @@ AppAsset::register($this);
 
             <!-- Nav Item - Charts -->
             <li class="nav-item">
-                <a class="nav-link" href="charts.html">
-                    <i class="fas fa-fw fa-chart-area"></i>
-                    <span>Produk</span>
+                <a class="nav-link" href="<?php echo Url::to('/product/index') ?>">
+                    <i class="fas fa-fw fa-list"></i>
+                    <span>Product</span>
                 </a>
             </li>
 
-            <!-- Nav Item - Tables -->
+            <!-- Nav Item - Charts -->
             <li class="nav-item">
-                <a class="nav-link" href="tables.html">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Kategori Produk</span></a>
+                <a class="nav-link" href="<?php echo Url::to('/order/index') ?>">
+                    <i class="fas fa-money-check-alt"></i>
+                    <span>Orders</span>
+                </a>
             </li>
+
+            <!-- Nav Item - Charts -->
+            <?php if ($superAdmin) : ?>
+                <li class="nav-item">
+                    <a class="nav-link" href="<?= Url::to('/user/index') ?>">
+                        <i class="fas fa-user-plus"></i>
+                        <span>Add Admin User</span>
+                    </a>
+                </li>
+            <?php endif; ?>
+
+
 
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
@@ -195,7 +217,7 @@ AppAsset::register($this);
                                 </h6>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
                                     <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_1.svg" alt="...">
+                                        <img class="rounded-circle" src="/img/undraw_profile_1.svg" alt="...">
                                         <div class="status-indicator bg-success"></div>
                                     </div>
                                     <div class="font-weight-bold">
@@ -206,7 +228,7 @@ AppAsset::register($this);
                                 </a>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
                                     <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_2.svg" alt="...">
+                                        <img class="rounded-circle" src="/img/undraw_profile_2.svg" alt="...">
                                         <div class="status-indicator"></div>
                                     </div>
                                     <div>
@@ -217,7 +239,7 @@ AppAsset::register($this);
                                 </a>
                                 <a class="dropdown-item d-flex align-items-center" href="#">
                                     <div class="dropdown-list-image mr-3">
-                                        <img class="rounded-circle" src="img/undraw_profile_3.svg" alt="...">
+                                        <img class="rounded-circle" src="/img/undraw_profile_3.svg" alt="...">
                                         <div class="status-indicator bg-warning"></div>
                                     </div>
                                     <div>
@@ -249,7 +271,7 @@ AppAsset::register($this);
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">
                                     <?php echo Yii::$app->user->identity->getDisplayName() ?>
                                 </span>
-                                <img class="img-profile rounded-circle" src="img/undraw_profile.svg">
+                                <img class="img-profile rounded-circle" src="/img/undraw_profile.svg">
                             </a>
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
@@ -277,8 +299,11 @@ AppAsset::register($this);
 
                 </nav>
                 <!-- End of Topbar -->
-
-                <?php echo $content ?>
+                <!-- Padding -->
+                <div class="p-4">
+                    <?php echo $content ?>
+                </div>
+                <!-- End of Padding -->
             </div>
             <!-- End of Main Content -->
 

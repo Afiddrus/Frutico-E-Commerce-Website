@@ -7,6 +7,7 @@
 use yii\bootstrap5\Html;
 use yii\bootstrap5\ActiveForm;
 
+$this->context->layout = '_guestLayout';
 $this->title = 'Request password reset';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
@@ -19,13 +20,31 @@ $this->params['breadcrumbs'][] = $this->title;
         <div class="col-lg-5">
             <?php $form = ActiveForm::begin(['id' => 'request-password-reset-form']); ?>
 
-                <?= $form->field($model, 'email')->textInput(['autofocus' => true]) ?>
+            <?= $form->field($model, 'email')->textInput(['autofocus' => true]) ?>
 
-                <div class="form-group">
-                    <?= Html::submitButton('Send', ['class' => 'btn btn-primary']) ?>
-                </div>
+            <div class="form-group">
+                <?= Html::submitButton('Send', ['class' => 'btn btn-primary']) ?>
+            </div>
 
             <?php ActiveForm::end(); ?>
         </div>
     </div>
 </div>
+
+<style>
+    .site-request-password-reset {
+        text-align: center;
+        padding: 100px 0;
+        /* Menambahkan padding atas dan bawah agar terlihat lebih baik */
+    }
+
+    .site-request-password-reset .row {
+        display: flex;
+        justify-content: center;
+    }
+
+    .site-request-password-reset .col-lg-5 {
+        max-width: 400px;
+        /* Mengatur lebar maksimal agar tampilan tetap teratur */
+    }
+</style>

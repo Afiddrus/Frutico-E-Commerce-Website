@@ -7,6 +7,7 @@
 use yii\bootstrap5\Html;
 use yii\bootstrap5\ActiveForm;
 
+$this->context->layout = '_guestLayout';
 $this->title = 'Resend verification email';
 $this->params['breadcrumbs'][] = $this->title;
 ?>
@@ -29,3 +30,21 @@ $this->params['breadcrumbs'][] = $this->title;
         </div>
     </div>
 </div>
+
+<style>
+    .site-resend-verification-email {
+        text-align: center;
+        padding: 100px 0;
+        /* Menambahkan padding atas dan bawah agar terlihat lebih baik */
+    }
+
+    .site-resend-verification-email .row {
+        display: flex;
+        justify-content: center;
+    }
+
+    .site-resend-verification-email .col-lg-5 {
+        max-width: 400px;
+        /* Mengatur lebar maksimal agar tampilan tetap teratur */
+    }
+</style>

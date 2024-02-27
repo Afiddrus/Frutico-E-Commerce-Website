@@ -36,14 +36,35 @@ return [
         'errorHandler' => [
             'errorAction' => 'site/error',
         ],
-        /*
+        'formatter' => [
+            'locale' => 'id-ID',
+            'timeZone' => 'Asia/Jakarta',
+            'dateFormat' => 'yyyy-MM-d',
+            'decimalSeparator' => ',',
+            'thousandSeparator' => '.',
+            'currencyCode' => 'IDR', // Kode mata uang IDR
+        ],
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
             'rules' => [
+                // 'page/<page:\d+>' => 'site/index',
+                '/ajax/update-cart-quantity?id=' => '/ajax/update-cart-quantity/',
+                '/profile/update-account' => '/profile'
             ],
         ],
-        */
+        'mailer' => [
+            'class' => 'yii\swiftmailer\Mailer',
+            'viewPath' => '@common/mail',
+            'transport' => [
+                'class' => 'Swift_SmtpTransport',
+                'host' => 'sandbox.smtp.mailtrap.io',
+                'username' => '604f57df1c0daf',
+                'password' => 'a29901fd920748',
+                'port' => '2525',
+                'encryption' => 'tls',
+            ],
+        ],
     ],
     'params' => $params,
 ];

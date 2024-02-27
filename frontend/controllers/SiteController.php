@@ -2,6 +2,7 @@
 
 namespace frontend\controllers;
 
+use common\models\CartItem;
 use frontend\models\ResendVerificationEmailForm;
 use frontend\models\VerifyEmailForm;
 use Yii;
@@ -11,15 +12,20 @@ use yii\web\Controller;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
 use common\models\LoginForm;
-use frontend\models\PasswordResetRequestForm;
+use common\models\Product;
+use common\models\User;
+use common\models\UserAddress;
+use frontend\base\Controller as BaseController;
+use common\models\PasswordResetRequestForm;
 use frontend\models\ResetPasswordForm;
 use frontend\models\SignupForm;
 use frontend\models\ContactForm;
+use yii\data\ActiveDataProvider;
 
 /**
  * Site controller
  */
-class SiteController extends Controller
+class SiteController extends BaseController
 {
     /**
      * {@inheritdoc}
@@ -35,6 +41,10 @@ class SiteController extends Controller
                         'actions' => ['signup'],
                         'allow' => true,
                         'roles' => ['?'],
+                        'denyCallback' => function () {
+                            // Pengguna sudah login, lemparkan ke halaman home
+                            return Yii::$app->getResponse()->redirect(Yii::$app->getHomeUrl())->send();
+                        }
                     ],
                     [
                         'actions' => ['logout'],
@@ -75,7 +85,41 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+        $dataProvider = new ActiveDataProvider([
+            'query' => Product::find()->published(),
+            'pagination' => [
+                'pageSize' => 1
+            ]
+        ]);
+        return $this->render('index', [
+            'dataProvider' => $dataProvider
+        ]);
+    }
+
+    public function actionShop()
+    {
+        $dataProvider = new ActiveDataProvider([
+            'query' => Product::find()->published()->andWhere(['>', 'stock', 0]),
+            'pagination' => [
+                'pageSize' => 1
+            ]
+        ]);
+        return $this->render('shop', [
+            'dataProvider' => $dataProvider
+        ]);
+    }
+
+    public function actionHistory()
+    {
+        $dataProvider = new ActiveDataProvider([
+            'query' => Product::find()->published(),
+            'pagination' => [
+                'pageSize' => 1
+            ]
+        ]);
+        return $this->render('history', [
+            'dataProvider' => $dataProvider
+        ]);
     }
 
     /**
@@ -85,13 +129,25 @@ class SiteController extends Controller
      */
     public function actionLogin()
     {
+        // $this->layout = 'login';
+
         if (!Yii::$app->user->isGuest) {
             return $this->goHome();
         }
 
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
+            $user = Yii::$app->user->identity;
+
+            if ($user && ($user->status === User::STATUS_ADMIN)) {
+                Yii::$app->user->logout();
+                Yii::$app->session->setFlash('error', 'You only have access to the Backend!');
+                return $this->refresh(); // Redirect kembali ke halaman login untuk pengguna lainnya
+            } else {
+                return $this->goBack(); // Redirect ke backend untuk pengguna dengan status 11
+
+            }
+            // return $this->goBack();
         }
 
         $model->password = '';
@@ -147,16 +203,92 @@ class SiteController extends Controller
     }
 
     /**
+     * Displays about page.
+     *
+     * @param int|null $id ID produk
+     * @return mixed
+     */
+    public function actionDetailProduct($id = null)
+    {
+        $model = $id ? Product::findOne($id) : new Product();
+        return $this->render('detail-product', ['model' => $model]);
+    }
+
+    public function actionAdd()
+    {
+        $id = \Yii::$app->request->post('id');
+        $product = Product::find()->id($id)->published()->one();
+        if (!$product) {
+            throw new NotFoundHttpException("Product does not exist");
+        }
+
+        if (\Yii::$app->user->isGuest) {
+
+            $cartItems = \Yii::$app->session->get(CartItem::SESSION_KEY, []);
+            $found = false;
+            foreach ($cartItems as &$item) {
+                if ($item['id'] == $id) {
+                    $item['quantity']++;
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $cartItem = [
+                    'id' => $id,
+                    'name' => $product->name,
+                    'image' => $product->image,
+                    'price' => $product->price,
+                    'quantity' => 1,
+                    'total_price' => $product->price
+                ];
+                $cartItems[] = $cartItem;
+            }
+
+            \Yii::$app->session->set(CartItem::SESSION_KEY, $cartItems);
+        } else {
+            $userId = \Yii::$app->user->id;
+            $cartItem = CartItem::find()->userId($userId)->productId($id)->one();
+            if ($cartItem) {
+                $cartItem->quantity++;
+            } else {
+                $cartItem = new CartItem();
+                $cartItem->product_id = $id;
+                $cartItem->created_by = $userId;
+                $cartItem->quantity = 1;
+            }
+            if ($cartItem->save()) {
+                return [
+                    'success' => true
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'errors' => $cartItem->errors
+                ];
+            }
+        }
+    }
+
+
+    /**
      * Signs user up.
      *
      * @return mixed
      */
     public function actionSignup()
     {
+
+
         $model = new SignupForm();
         if ($model->load(Yii::$app->request->post()) && $model->signup()) {
+            $genmail = $model->email; //get model email value 
+            $identity = User::findOne(['email' => $genmail]); //find user by email
+            if (Yii::$app->user->login($identity)) { // login user
+                return $this->redirect('login'); // show accaount page
+            }
             Yii::$app->session->setFlash('success', 'Thank you for registration. Please check your inbox for verification email.');
-            return $this->goHome();
+            // return $this->goHome();
         }
 
         return $this->render('signup', [
@@ -254,6 +386,25 @@ class SiteController extends Controller
 
         return $this->render('resendVerificationEmail', [
             'model' => $model
+        ]);
+    }
+
+    public function actionSearch()
+    {
+        $searchQuery = Yii::$app->request->get('q'); // Ambil query pencarian dari URL
+
+        // Query pencarian berdasarkan nama produk
+        $query = Product::find()->where(['like', 'name', $searchQuery]);
+
+        $dataProvider = new \yii\data\ActiveDataProvider([
+            'query' => $query,
+            'pagination' => [
+                'pageSize' => 15, // Ubah sesuai dengan kebutuhan Anda
+            ],
+        ]);
+
+        return $this->render('shop', [
+            'dataProvider' => $dataProvider,
         ]);
     }
 }

@@ -42,6 +42,15 @@ return [
             'showScriptName' => false,
             'rules' => [],
         ],
+        'formatter' => [
+            'locale' => 'id-ID',
+            'timeZone' => 'Asia/Jakarta',
+            'dateFormat' => 'yyyy-MM-d',
+            'decimalSeparator' => ',',
+            'thousandSeparator' => '.',
+            'currencyCode' => 'IDR', // Kode mata uang IDR
+        ],
+
     ],
     'params' => $params,
 ];

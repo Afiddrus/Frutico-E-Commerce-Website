@@ -3,6 +3,9 @@
 namespace backend\controllers;
 
 use common\models\LoginForm;
+use common\models\Order;
+use common\models\OrderItem;
+use common\models\User;
 use Yii;
 use yii\filters\VerbFilter;
 use yii\filters\AccessControl;
@@ -62,7 +65,40 @@ class SiteController extends Controller
      */
     public function actionIndex()
     {
-        return $this->render('index');
+
+        $totalEarnings = Order::find()->paid()->sum('total_price');
+        $totalOrders = Order::find()->paid()->count();
+        $totalProducts = OrderItem::find()
+            ->alias('oi')
+            ->innerJoin(Order::tableName() . ' o', 'o.id = oi.order_id')
+            ->andWhere(['o.status' => Order::STATUS_COMPLETED])
+            ->sum('quantity');
+        // $totalProducts = (new \yii\db\Query())
+        //     ->from(['oi' => OrderItem::tableName()])
+        //     ->innerJoin(['o' => Order::tableName()], 'o.id = oi.order_id')
+        //     ->where(['o.status' => Order::STATUS_COMPLETED])
+        //     ->sum('oi.quantity');
+        $totalUsers = User::find()->andWhere(['status' => User::STATUS_ACTIVE])->count();
+
+        $orders = Order::find()->paid()->all();
+        $data = [];
+
+        /*
+         * Mon - 1
+         * Tue - 0
+         * Wed - 0
+         * Thi - 0
+         * Fri - 0
+        */
+        foreach ($orders as $order) {
+        }
+
+        return $this->render('index', [
+            'totalEarnings' => $totalEarnings,
+            'totalOrders' => $totalOrders,
+            'totalProducts' => $totalProducts,
+            'totalUsers' => $totalUsers,
+        ]);
     }
 
     /**
@@ -80,7 +116,15 @@ class SiteController extends Controller
 
         $model = new LoginForm();
         if ($model->load(Yii::$app->request->post()) && $model->login()) {
-            return $this->goBack();
+            $user = Yii::$app->user->identity;
+
+            if ($user && ($user->status === User::STATUS_ADMIN || $user->status === User::STATUS_ADMIN_ALL)) {
+                return $this->goBack(); // Redirect ke backend untuk pengguna dengan status 11
+            } else {
+                Yii::$app->user->logout();
+                Yii::$app->session->setFlash('error', 'Anda tidak memiliki status yang dibutuhkan untuk login.');
+                return $this->refresh(); // Redirect kembali ke halaman login untuk pengguna lainnya
+            }
         }
 
         $model->password = '';
@@ -89,6 +133,8 @@ class SiteController extends Controller
             'model' => $model,
         ]);
     }
+
+
 
     public function actionForgotPassword()
     {
