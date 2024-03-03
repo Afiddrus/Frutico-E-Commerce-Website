@@ -21,6 +21,13 @@ AppAsset::register($this);
 
 $userAddress = \common\models\UserAddress::findOne(['user_id' => Yii::$app->user->identity->id]);
 
+// Mengakses Client Key dari params.php
+$clientKey = Yii::$app->params['midtrans']['clientKey'];
+
+// Kemudian, gunakan $clientKey saat memuat halaman atau menggunakan metode pembayaran di sisi klien
+// Contoh:
+
+
 ?>
 
 <?php $this->beginPage() ?>
@@ -55,6 +62,8 @@ $userAddress = \common\models\UserAddress::findOne(['user_id' => Yii::$app->user
 <link rel="stylesheet" href="/css/responsive.css">
 <!-- SweetAlert -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
+<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="<?= $clientKey ?>"></script>
+
 
 <?php $this->head() ?>
 </head>
@@ -108,10 +117,10 @@ $userAddress = \common\models\UserAddress::findOne(['user_id' => Yii::$app->user
                                 <div class="card-body">
                                     <div class="billing-address-form">
                                         <!-- ... Form fields ... -->
-                                        <?php $form = ActiveForm::begin([
-                                            'id' => 'checkout-form',
-                                            'action' => ['/cart/submit-order'],
-                                        ]); ?>
+                                        <!-- <?php $form = ActiveForm::begin([
+                                                    'id' => 'checkout-form',
+                                                    'action' => ['/cart/submit-order'],
+                                                ]); ?> -->
 
                                         <?= $form->field($order, 'firstname')->textInput(['id' => 'order-firstname', 'name' => 'Order[firstname]', 'value' => Yii::$app->user->identity->firstname, 'required' => true]) ?>
                                         <?= $form->field($order, 'lastname')->textInput(['id' => 'order-lastname', 'name' => 'Order[lastname]', 'value' => Yii::$app->user->identity->lastname, 'required' => true]) ?>
@@ -240,34 +249,36 @@ $userAddress = \common\models\UserAddress::findOne(['user_id' => Yii::$app->user
                             </tbody>
                         </table>
                         <br>
-                        <table class="cart-table">
-                            <thead class="cart-table-head">
-                                <tr class="table-head-row">
-                                    <th class="product-image">Product Image</th>
-                                    <th class="product-name">Name</th>
-                                    <th class="product-price">Price</th>
-                                    <th class="product-quantity">Quantity</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($cartItems as $item) : ?>
-                                    <tr class="table-body-row" data-id="<?php echo $item['id'] ?>" data-url="<?php echo Url::to(['/cart/change-quantity']) ?>">
-                                        <!-- <td><?php echo Html::a('Delete', ['/cart/delete', 'id' => $item['id']], [
-                                                        'class' => 'btn btn-danger, btn-outline btn-sm'
-                                                    ]) ?></td> -->
-                                        <td class="product-image">
-                                            <img src="<?php echo Yii::$app->params['frontendUrl'] . '/storage' . $item['image']  ?>" style="width:50px" alt="<?php echo $item['name'] ?>">
-                                        </td>
-                                        <td class="product-name"><?php echo $item['name'] ?></td>
-                                        <td class="product-price"><?php echo $item['price'] ?></td>
-                                        <td class="product-quantity text-center">
-                                            <?php echo $item['quantity'] ?> </td>
+                        <div class="table-responsive">
+                            <table class="cart-table table">
+                                <thead class="cart-table-head">
+                                    <tr class="table-head-row">
+                                        <th class="product-image">Product Image</th>
+                                        <th class="product-name">Name</th>
+                                        <th class="product-price">Price</th>
+                                        <th class="product-quantity">Quantity</th>
                                     </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($cartItems as $item) : ?>
+                                        <tr class="table-body-row" data-id="<?php echo $item['id'] ?>" data-url="<?php echo Url::to(['/cart/change-quantity']) ?>">
+                                            <!-- <td><?php echo Html::a('Delete', ['/cart/delete', 'id' => $item['id']], [
+                                                            'class' => 'btn btn-danger, btn-outline btn-sm'
+                                                        ]) ?></td> -->
+                                            <td class="product-image">
+                                                <img src="<?php echo Yii::$app->params['frontendUrl'] . '/storage' . $item['image']  ?>" style="max-width:50px; height:auto;" alt="<?php echo $item['name'] ?>">
+                                            </td>
+                                            <td class="product-name"><?php echo $item['name'] ?></td>
+                                            <td class="product-price"><?php echo $item['price'] ?></td>
+                                            <td class="product-quantity text-center">
+                                                <?php echo $item['quantity'] ?> </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
 
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                        <a href="#" class="boxed-btn" id="place-order-btn">Place Order</a>
+                        <a href="#" class="boxed-btn" id="pay-button">Place Order</a>
                     </div>
                 </div>
             </div>
@@ -352,6 +363,67 @@ $userAddress = \common\models\UserAddress::findOne(['user_id' => Yii::$app->user
     </div>
     <!-- end footer -->
     <?php ActiveForm::end(); ?>
+
+    <?php $this->registerJs("
+$(document).ready(function() {
+    $('#pay-button').click(function() {
+        // Mengirimkan data pembayaran ke server Anda
+        $.ajax({
+            url: '" . Url::to(['/cart/submit-order']) . "',
+            method: 'POST',
+            dataType: 'json',
+            data: $('#billing-address-form').serialize(),
+            success: function(response) {
+                // Membuat permintaan ke Midtrans untuk mendapatkan Snap Token
+                $.ajax({
+                    url: 'https://api.sandbox.midtrans.com/v2/snap/token',
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Basic ' + btoa('SB-Mid-server-2qghlkw8gh35wmWdaFIVDfGQ')
+                    },
+                    data: {
+                        transaction_details: {
+                            order_id: response.order_id,
+                            gross_amount: response.gross_amount
+                        }
+                    },
+                    success: function(data) {
+                        // Mengirimkan token Snap ke klien
+                        var snapToken = data.token;
+                        // Memunculkan jendela pembayaran dengan Snap Token
+                        snap.pay(snapToken, {
+                            onSuccess: function(result) {
+                                window.location.href = '" . Url::to(['/cart/success']) . "';
+                            },
+                            onPending: function(result) {
+                                window.location.href = '" . Url::to(['/cart/pending']) . "';
+                            },
+                            onError: function(result) {
+                                window.location.href = '" . Url::to(['/cart/error']) . "';
+                            }
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText);
+                        Swal.fire({
+                            title: 'An error occurred while processing the order.',
+                            icon: 'error',
+                        });
+                    }
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error(xhr.responseText);
+                Swal.fire({
+                    title: 'An error occurred while processing the order.',
+                    icon: 'error',
+                });
+            }
+        });
+    });
+});
+
+    "); ?>
     <!-- copyright -->
     <div class="copyright">
         <div class="container">
@@ -435,87 +507,12 @@ $userAddress = \common\models\UserAddress::findOne(['user_id' => Yii::$app->user
 
                     return;
                 }
-                // Ambil informasi pengguna yang saat ini masuk
-                const firstname = '<?= Yii::$app->user->identity->firstname ?>';
-                const lastname = '<?= Yii::$app->user->identity->lastname ?>';
-                const email = '<?= Yii::$app->user->identity->email ?>';
 
-                // Isi input field dengan informasi pengguna
-                $('#order-firstname').val(firstname);
-                $('#order-lastname').val(lastname);
-                $('#order-email').val(email);
-
-                // Validasi bahwa firstname, lastname, dan email tidak kosong
-                // if (!firstname || !lastname || !email) {
-                //     alert('Harap isi semua field yang diperlukan.');
-                //     return;
-                // }
-
-                // Menambahkan CSRF token ke dalam data
+                // Mendapatkan CSRF token
                 const csrfToken = $('meta[name="csrf-token"]').attr('content');
                 data.push({
                     name: '_csrf',
                     value: csrfToken
-                });
-
-
-                // Mendapatkan total_price dari variabel $totalPrice
-                // const total_price = <?php echo json_encode($totalPrice); ?>;
-
-                // Generate angka random untuk "transactionId"
-                const randomTransactionId = Math.floor(Math.random() * 10000) + 1;
-
-                // Tambahkan data ke dalam array
-                data.push({
-                    name: 'transactionId',
-                    value: randomTransactionId
-                });
-                data.push({
-                    name: 'status',
-                    value: 'COMPLETED'
-                });
-
-                // Tambahkan data dari form field ke dalam array
-                data.push({
-                    name: 'firstname',
-                    value: firstname
-                });
-                data.push({
-                    name: 'lastname',
-                    value: lastname
-                });
-                data.push({
-                    name: 'email',
-                    value: email
-                });
-
-                // Tambahkan total_price ke dalam data
-                data.push({
-                    name: 'total_price',
-                    value: <?php echo json_encode($totalPrice); ?>
-                });
-
-                data.push({
-                    name: 'address',
-                    value: $('#orderaddress-address').val()
-                });
-                data.push({
-                    name: 'city',
-                    value: $('#orderaddress-city').val()
-                });
-
-                data.push({
-                    name: 'state',
-                    value: $('#orderaddress-state').val()
-                });
-
-                data.push({
-                    name: 'country',
-                    value: $('#orderaddress-country').val()
-                });
-                data.push({
-                    name: 'zipcode',
-                    value: $('#orderaddress-zipcode').val()
                 });
 
                 console.log(data);
@@ -524,8 +521,8 @@ $userAddress = \common\models\UserAddress::findOne(['user_id' => Yii::$app->user
                     url: '<?php echo \yii\helpers\Url::to(['/cart/create-order']) ?>',
                     data: data,
                     headers: {
-                        'X-CSRF-Token': csrfToken, // Sesuaikan dengan nama header yang diperlukan oleh server Anda
-                        'Content-Type': 'application/x-www-form-urlencoded' // Sesuaikan dengan jenis konten yang diperlukan oleh server Anda
+                        'X-CSRF-Token': csrfToken,
+                        'Content-Type': 'application/x-www-form-urlencoded'
                     },
                     success: function(response) {
                         Swal.fire({
@@ -538,18 +535,60 @@ $userAddress = \common\models\UserAddress::findOne(['user_id' => Yii::$app->user
                     error: function(error) {
                         Swal.fire({
                             title: 'An error occurred while processing the order.',
-                            text: error.responseText, // Anda dapat menampilkan pesan kesalahan dari server di sini
+                            text: error.responseText,
                             icon: 'error',
                         }).then(function() {
                             console.error(error);
                         });
+                    },
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+                    },
+                    xhrFields: {
+                        withCredentials: true
                     }
                 });
-
 
             });
         });
     </script>
+
+
+    <script>
+        $(document).ready(function() {
+            $('#pay-button').click(function() {
+                $.ajax({
+                    url: '<?= Url::to(['/cart/submit-order']) ?>', // Ganti URL dengan URL yang benar
+                    method: 'POST',
+                    dataType: 'json',
+                    data: $('#checkout-form').serialize(),
+                    success: function(response) {
+                        // Jika pesanan berhasil dibuat, panggil Snap.pay untuk membuka jendela pembayaran Snap
+                        snap.pay(response.token, {
+                            onSuccess: function(result) {
+                                // Jika pembayaran berhasil, arahkan pengguna ke halaman sukses
+                                window.location.href = '<?= Url::to(['/cart/success']) ?>';
+                            },
+                            onPending: function(result) {
+                                // Jika pembayaran tertunda, arahkan pengguna ke halaman tertunda
+                                window.location.href = '<?= Url::to(['/cart/pending']) ?>';
+                            },
+                            onError: function(result) {
+                                // Jika pembayaran gagal, arahkan pengguna ke halaman gagal
+                                window.location.href = '<?= Url::to(['/cart/error']) ?>';
+                            }
+                        });
+                    },
+                    error: function(xhr, status, error) {
+                        console.error(xhr.responseText);
+                        alert('An error occurred while processing the order.');
+                    }
+                });
+            });
+        });
+    </script>
+
+
 
     <?php $this->endBody() ?>
 
@@ -565,6 +604,57 @@ $userAddress = \common\models\UserAddress::findOne(['user_id' => Yii::$app->user
     .cart-table th {
         text-align: left;
         /* Atur alignment teks jika diperlukan */
+    }
+
+    .cart-table-head .table-head-row th {
+        border-bottom: none;
+    }
+
+    #pay-button {
+        display: block;
+        margin: 10 auto;
+        text-align: center;
+        width: fit-content;
+        /* Lebar akan disesuaikan dengan teks tombol */
+        padding: 10px 20px;
+        /* Sesuaikan dengan kebutuhan Anda */
+    }
+
+    .order-details,
+    .cart-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .order-details th,
+    .order-details td,
+    .cart-table th,
+    .cart-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+
+    .order-details th {
+        background-color: #f2f2f2;
+    }
+
+    .cart-table th {
+        background-color: #f8f9fa;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .cart-table-head .table-head-row th {
+        background-color: #f2f2f2;
+        /* Sesuaikan dengan warna latar belakang header tabel pertama */
+    }
+
+    .cart-table .table-head-row th {
+        background-color: #f2f2f2;
+        /* Sesuaikan dengan warna latar belakang header tabel pertama */
     }
 </style>
 

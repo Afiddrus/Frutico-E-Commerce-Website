@@ -17,6 +17,10 @@ use yii\web\Controller;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 use yii\widgets\ActiveForm;
+use GuzzleHttp\Client;
+use Midtrans\Config;
+use Midtrans\Snap;
+use yii\filters\AccessControl;
 
 /**
  * 
@@ -30,7 +34,7 @@ class CartController extends BaseController
     public function behaviors()
     {
         return [
-            [
+            'contentNegotiator' => [
                 'class' => ContentNegotiator::class,
                 'only' => ['add', 'create-order'],
                 'formats' => [
@@ -38,15 +42,24 @@ class CartController extends BaseController
                     'application/xml' => Response::FORMAT_XML,
                 ],
             ],
-            [
+            'verbFilter' => [
                 'class' => VerbFilter::class,
                 'actions' => [
                     'delete' => ['POST', 'DELETE'],
                     'create-order' => ['POST'],
                 ]
-            ]
+            ],
+            'access' => [
+                'class' => AccessControl::class,
+                'only' => ['checkout-page'], // Sesuaikan dengan aksi yang ingin Anda batasi aksesnya
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'roles' => ['@'], // Hanya untuk pengguna yang sudah login
+                    ],
+                ],
+            ],
         ];
-        // ];
     }
     public function actionIndex()
     {
@@ -310,27 +323,23 @@ class CartController extends BaseController
         if (Yii::$app->request->isAjax) {
             $postData = Yii::$app->request->post();
 
-            $productId = isset($postData['product_id']) ? $postData['product_id'] : null;
-
+            // Pastikan untuk mengambil data pesanan dari request
             $firstname = isset($postData['firstname']) ? $postData['firstname'] : '';
             $lastname = isset($postData['lastname']) ? $postData['lastname'] : '';
             $email = isset($postData['email']) ? $postData['email'] : '';
 
             // Deklarasi variabel untuk data keranjang belanja
             $cartItems = CartItem::getItemsForUser(Yii::$app->user->id);
-            $productQuantity = CartItem::getTotalQuantityForUser(Yii::$app->user->id);
             $totalPrice = CartItem::getTotalPriceForUser(Yii::$app->user->id);
 
             $order = new Order();
             $order->firstname = $firstname;
             $order->lastname = $lastname;
             $order->email = $email;
-            $order->total_price = isset($postData['total_price']) ? $postData['total_price'] : 0;
-            $order->status = Order::STATUS_COMPLETED;
+            $order->total_price = $totalPrice;
+            $order->status = Order::STATUS_DRAFT; // Pesanan dalam status pending sampai pembayaran berhasil
             $order->transaction_id = sprintf('%04d', rand(0, 9999));
-
             $order->created_at = time();
-
             $order->created_by = Yii::$app->user->id;
 
             $orderAddress = new OrderAddress();
@@ -347,10 +356,31 @@ class CartController extends BaseController
                         $orderAddress->order_id = $order->id;
                         if ($orderAddress->save()) {
                             // Hapus item keranjang belanja setelah membuat pesanan baru
-                            CartItem::clearCart(currUserId());
+                            CartItem::clearCart(Yii::$app->user->id);
+
+                            // Konfigurasi Midtrans
+                            Config::$serverKey = Yii::$app->params['midtrans']['serverKey'];
+                            Config::$clientKey = Yii::$app->params['midtrans']['clientKey'];
+                            Config::$isProduction = Yii::$app->params['midtrans']['isProduction']; // Set true untuk mode produksi
+
+                            // Mendapatkan token Snap untuk pembayaran
+                            $snapToken = Snap::getSnapToken([
+                                'transaction_details' => [
+                                    'order_id' => $order->id,
+                                    'gross_amount' => $totalPrice, // total harga pesanan
+                                ],
+                                'customer_details' => [
+                                    'first_name' => $firstname,
+                                    'last_name' => $lastname,
+                                    'email' => $email,
+                                ],
+                                'credit_card' => [
+                                    'secure' => true,
+                                ],
+                            ]);
 
                             $transaction->commit();
-                            return $this->asJson(['success' => true, 'message' => 'Pesanan berhasil ditempatkan.', 'orderId' => $order->id]);
+                            return $this->asJson(['success' => true, 'snapToken' => $snapToken]);
                         } else {
                             $transaction->rollBack();
                             return $this->asJson(['success' => false, 'message' => 'Gagal menyimpan alamat pesanan.', 'errors' => $orderAddress->errors]);
@@ -369,6 +399,32 @@ class CartController extends BaseController
         }
     }
 
+    public function getMidtransSnapToken($cardNumber, $cardCVV, $cardExpMonth, $cardExpYear)
+    {
+        $client = new Client();
+
+        try {
+            $response = $client->request('GET', 'https://api.sandbox.midtrans.com/v2/token', [
+                'headers' => [
+                    'accept' => 'application/json',
+                    'Authorization' => 'Basic ' . base64_encode(Yii::$app->params['midtrans']['serverKey'] . ':')
+                ],
+                'query' => [
+                    'card_number' => $cardNumber,
+                    'card_cvv' => $cardCVV,
+                    'card_exp_month' => $cardExpMonth,
+                    'card_exp_year' => $cardExpYear,
+                ]
+            ]);
+
+            $data = json_decode($response->getBody(), true);
+            return $data['token'];
+        } catch (\Exception $e) {
+            // Handle error jika terjadi
+            Yii::error('Error getting Midtrans snap token: ' . $e->getMessage());
+            return null;
+        }
+    }
 
 
     public function actionCheckoutPage()
@@ -396,6 +452,8 @@ class CartController extends BaseController
         // Calculate product quantity based on the number of cart items
         $productQuantity = count($cartItems);
 
+        // Set Midtrans Client Key
+        $midtransClientKey = Yii::$app->params['midtrans']['clientKey'];
 
         return $this->render('checkout', [
             'order' => $order,
@@ -403,9 +461,9 @@ class CartController extends BaseController
             'cartItems' => $cartItems,
             'productQuantity' => $productQuantity,
             'totalPrice' => $totalPrice,
+            'midtransClientKey' => $midtransClientKey, // Pass Midtrans Client Key to the view
         ]);
     }
-
 
 
     public function actionSubmitOrder()
@@ -454,5 +512,44 @@ class CartController extends BaseController
                 return $this->asJson(['success' => false, 'message' => 'Gagal validasi pesanan.', 'errors' => [$order->errors, $orderAddress->errors]]);
             }
         }
+    }
+
+    public function actionPay()
+    {
+        $midtrans = Yii::$app->midtrans;
+
+        // Konfigurasi pembayaran
+        $transactionDetails = [
+            'order_id' => 'ORD-' . time(),
+            'gross_amount' => 10000, // Total pembayaran
+        ];
+
+        // Buat request pembayaran
+        $snapToken = $midtrans->snapToken($transactionDetails);
+
+        return $this->render('checkout', [
+            'snapToken' => $snapToken,
+        ]);
+    }
+
+    public function actionSnapToken()
+    {
+        // Set Midtrans Configurations
+        \Midtrans\Config::$serverKey = 'SB-Mid-server-2qghlkw8gh35wmWdaFIVDfGQ';
+        \Midtrans\Config::$isProduction = false;
+        \Midtrans\Config::$isSanitized = false;
+        \Midtrans\Config::$is3ds = true;
+
+        // Define Transaction Details
+        $transactionDetails = [
+            'order_id' => '1234',
+            'gross_amount' => 10000,
+        ];
+
+        // Get Snap Token
+        $snapToken = Snap::getSnapToken($transactionDetails);
+
+        // Return Snap Token
+        return $this->asJson(['snap_token' => $snapToken]);
     }
 }
