@@ -72,7 +72,8 @@ $statusLabels = [
                     'attribute' => 'status',
                     'format' => 'raw',
                     'value' => function ($model) use ($statusLabels) {
-                        $statusClass = $model->status === Order::STATUS_COMPLETED ? 'badge-success' : 'badge-danger';
+                        $statusClass = $model->status === Order::STATUS_COMPLETED;
+                        // ? 'badge-success' : 'badge-danger'
                         return Html::tag('span', $statusLabels[$model->status], ['class' => 'badge ' . $statusClass . ' text-blue']); // Tambahkan kelas 'text-blue' untuk warna teks biru
                     },
                     'contentOptions' => ['style' => 'border-right: 1px solid gray;'], // Tambahkan border-right pada kolom status

@@ -231,6 +231,11 @@ class CartController extends BaseController
     public function actionCheckout()
     {
         $transaction = Yii::$app->db->beginTransaction(Transaction::SERIALIZABLE);
+        // Set Midtrans Configurations
+        \Midtrans\Config::$serverKey = 'SB-Mid-server-2qghlkw8gh35wmWdaFIVDfGQ';
+        \Midtrans\Config::$isProduction = false;
+        \Midtrans\Config::$isSanitized = false;
+        \Midtrans\Config::$is3ds = true;
 
         try {
             $order = new Order();
@@ -317,38 +322,47 @@ class CartController extends BaseController
         }
     }
 
-
     public function actionCreateOrder()
     {
         if (Yii::$app->request->isAjax) {
             $postData = Yii::$app->request->post();
 
-            // Pastikan untuk mengambil data pesanan dari request
-            $firstname = isset($postData['firstname']) ? $postData['firstname'] : '';
-            $lastname = isset($postData['lastname']) ? $postData['lastname'] : '';
-            $email = isset($postData['email']) ? $postData['email'] : '';
+            // Mendapatkan data pelanggan
+            $firstname = isset($postData['Order']['firstname']) ? $postData['Order']['firstname'] : '';
+            $lastname = isset($postData['Order']['lastname']) ? $postData['Order']['lastname'] : '';
+            $email = isset($postData['Order']['email']) ? $postData['Order']['email'] : '';
 
-            // Deklarasi variabel untuk data keranjang belanja
+            // Mendapatkan data alamat
+            $address = isset($postData['OrderAddress']['address']) ? $postData['OrderAddress']['address'] : '';
+            $city = isset($postData['OrderAddress']['city']) ? $postData['OrderAddress']['city'] : '';
+            $state = isset($postData['OrderAddress']['state']) ? $postData['OrderAddress']['state'] : '';
+            $country = isset($postData['OrderAddress']['country']) ? $postData['OrderAddress']['country'] : '';
+            $zipcode = isset($postData['OrderAddress']['zipcode']) ? $postData['OrderAddress']['zipcode'] : '';
+
+            // Mendapatkan daftar barang dari tabel keranjang
             $cartItems = CartItem::getItemsForUser(Yii::$app->user->id);
             $totalPrice = CartItem::getTotalPriceForUser(Yii::$app->user->id);
 
+            // Buat model Order
             $order = new Order();
             $order->firstname = $firstname;
             $order->lastname = $lastname;
             $order->email = $email;
-            $order->total_price = $totalPrice;
-            $order->status = Order::STATUS_DRAFT; // Pesanan dalam status pending sampai pembayaran berhasil
+            $order->total_price = $totalPrice; // Total harga pesanan
+            $order->status = Order::STATUS_FAILURED;
             $order->transaction_id = sprintf('%04d', rand(0, 9999));
             $order->created_at = time();
             $order->created_by = Yii::$app->user->id;
 
+            // Buat model OrderAddress
             $orderAddress = new OrderAddress();
-            $orderAddress->address = isset($postData['address']) ? $postData['address'] : '';
-            $orderAddress->city = isset($postData['city']) ? $postData['city'] : '';
-            $orderAddress->state = isset($postData['state']) ? $postData['state'] : '';
-            $orderAddress->country = isset($postData['country']) ? $postData['country'] : '';
-            $orderAddress->zipcode = isset($postData['zipcode']) ? $postData['zipcode'] : '';
+            $orderAddress->address = $address;
+            $orderAddress->city = $city;
+            $orderAddress->state = $state;
+            $orderAddress->country = $country;
+            $orderAddress->zipcode = $zipcode;
 
+            // Validasi model
             if ($order->validate() && $orderAddress->validate()) {
                 $transaction = Yii::$app->db->beginTransaction();
                 try {
@@ -358,29 +372,8 @@ class CartController extends BaseController
                             // Hapus item keranjang belanja setelah membuat pesanan baru
                             CartItem::clearCart(Yii::$app->user->id);
 
-                            // Konfigurasi Midtrans
-                            Config::$serverKey = Yii::$app->params['midtrans']['serverKey'];
-                            Config::$clientKey = Yii::$app->params['midtrans']['clientKey'];
-                            Config::$isProduction = Yii::$app->params['midtrans']['isProduction']; // Set true untuk mode produksi
-
-                            // Mendapatkan token Snap untuk pembayaran
-                            $snapToken = Snap::getSnapToken([
-                                'transaction_details' => [
-                                    'order_id' => $order->id,
-                                    'gross_amount' => $totalPrice, // total harga pesanan
-                                ],
-                                'customer_details' => [
-                                    'first_name' => $firstname,
-                                    'last_name' => $lastname,
-                                    'email' => $email,
-                                ],
-                                'credit_card' => [
-                                    'secure' => true,
-                                ],
-                            ]);
-
                             $transaction->commit();
-                            return $this->asJson(['success' => true, 'snapToken' => $snapToken]);
+                            return $this->asJson(['success' => true, 'message' => 'Pesanan berhasil ditempatkan.', 'orderId' => $order->id]);
                         } else {
                             $transaction->rollBack();
                             return $this->asJson(['success' => false, 'message' => 'Gagal menyimpan alamat pesanan.', 'errors' => $orderAddress->errors]);
@@ -398,6 +391,109 @@ class CartController extends BaseController
             }
         }
     }
+
+
+
+    // public function actionCreateOrder()
+    // {
+    //     // Set Midtrans Configurations
+    //     \Midtrans\Config::$serverKey = 'SB-Mid-server-2qghlkw8gh35wmWdaFIVDfGQ';
+    //     \Midtrans\Config::$isProduction = false;
+    //     \Midtrans\Config::$isSanitized = false;
+    //     \Midtrans\Config::$is3ds = true;
+    //     if (Yii::$app->request->isAjax) {
+    //         $postData = Yii::$app->request->post();
+
+    //         // Pastikan untuk mengambil data pesanan dari request
+    //         $firstname = isset($postData['firstname']) ? $postData['firstname'] : '';
+    //         $lastname = isset($postData['lastname']) ? $postData['lastname'] : '';
+    //         $email = isset($postData['email']) ? $postData['email'] : '';
+
+    //         // Deklarasi variabel untuk data keranjang belanja
+    //         $cartItems = CartItem::getItemsForUser(Yii::$app->user->id);
+    //         $totalPrice = CartItem::getTotalPriceForUser(Yii::$app->user->id);
+
+    //         $order = new Order();
+    //         $order->firstname = $firstname;
+    //         $order->lastname = $lastname;
+    //         $order->email = $email;
+    //         $order->total_price = $totalPrice;
+    //         $order->status = Order::STATUS_DRAFT; // Pesanan dalam status pending sampai pembayaran berhasil
+    //         $order->transaction_id = rand(); // Ini diganti
+    //         $order->created_at = time();
+    //         $order->created_by = Yii::$app->user->id;
+
+    //         $orderAddress = new OrderAddress();
+    //         $orderAddress->address = isset($postData['address']) ? $postData['address'] : '';
+    //         $orderAddress->city = isset($postData['city']) ? $postData['city'] : '';
+    //         $orderAddress->state = isset($postData['state']) ? $postData['state'] : '';
+    //         $orderAddress->country = isset($postData['country']) ? $postData['country'] : '';
+    //         $orderAddress->zipcode = isset($postData['zipcode']) ? $postData['zipcode'] : '';
+
+    //         if ($order->validate() && $orderAddress->validate()) {
+    //             $transaction = Yii::$app->db->beginTransaction();
+    //             try {
+    //                 if ($order->save()) {
+    //                     $orderAddress->order_id = $order->id;
+    //                     if ($orderAddress->save()) {
+    //                         // Hapus item keranjang belanja setelah membuat pesanan baru
+    //                         CartItem::clearCart(Yii::$app->user->id);
+
+    //                         // Ambil item keranjang belanja
+    //                         $cartItems = CartItem::getItemsForUser(Yii::$app->user->id);
+
+    //                         // Siapkan array untuk menyimpan detail item
+    //                         $itemDetails = [];
+
+    //                         // Loop melalui setiap item dalam keranjang belanja dan tambahkan detailnya ke dalam array itemDetails
+    //                         foreach ($cartItems as $item) {
+    //                             $itemDetails[] = [
+    //                                 'id' => $item['product_id'], // ID produk
+    //                                 'price' => $item['price'], // Harga produk per item
+    //                                 'quantity' => $item['quantity'], // Jumlah item
+    //                                 'name' => $item['product_name'], // Nama produk
+    //                             ];
+    //                         }
+
+    //                         $params = [
+    //                             'transaction_details' => [
+    //                                 'order_id' => $order->transaction_id, // ID pesanan (Anda mungkin perlu mengganti ini dengan ID pesanan yang unik)
+    //                                 'gross_amount' => $order->total_price, // Total harga pesanan
+    //                             ],
+    //                             'customer_details' => [
+    //                                 'first_name' => $order->firstname, // Nama depan pelanggan
+    //                                 'last_name' => $order->lastname, // Nama belakang pelanggan
+    //                                 'email' => $order->email, // Email pelanggan
+    //                                 'address' => $orderAddress->address, // Alamat pelanggan
+    //                                 'city' => $orderAddress->city, // Kota pelanggan
+    //                                 'state' => $orderAddress->state, // Provinsi pelanggan
+    //                                 'country' => $orderAddress->country, // Negara pelanggan
+    //                                 'zipcode' => $orderAddress->zipcode, // Kode pos pelanggan
+    //                                 // 'phone' => '08111222333', // Nomor telepon pelanggan
+    //                             ],
+    //                             'item_details' => $itemDetails, // Detail item dari keranjang belanja
+    //                         ];
+
+    //                         $transaction->commit();
+    //                         return $this->asJson(['success' => true, 'params' => $params, 'order_id' => $order->transaction_id]);
+    //                     } else {
+    //                         $transaction->rollBack();
+    //                         return $this->asJson(['success' => false, 'message' => 'Gagal menyimpan alamat pesanan.', 'errors' => $orderAddress->errors]);
+    //                     }
+    //                 } else {
+    //                     $transaction->rollBack();
+    //                     return $this->asJson(['success' => false, 'message' => 'Gagal menyimpan pesanan.', 'errors' => $order->errors]);
+    //                 }
+    //             } catch (\Exception $e) {
+    //                 $transaction->rollBack();
+    //                 return $this->asJson(['success' => false, 'message' => 'Gagal menyimpan pesanan: ' . $e->getMessage()]);
+    //             }
+    //         } else {
+    //             return $this->asJson(['success' => false, 'message' => 'Gagal validasi pesanan.', 'errors' => array_merge($order->errors, $orderAddress->errors)]);
+    //         }
+    //     }
+    // }
+
 
     public function getMidtransSnapToken($cardNumber, $cardCVV, $cardExpMonth, $cardExpYear)
     {
@@ -551,5 +647,45 @@ class CartController extends BaseController
 
         // Return Snap Token
         return $this->asJson(['snap_token' => $snapToken]);
+    }
+
+    public function actionMidtrans()
+    {
+        // Set your Merchant Server Key
+        \Midtrans\Config::$serverKey = 'SB-Mid-server-2qghlkw8gh35wmWdaFIVDfGQ';
+        // Set to Development/Sandbox Environment (default). Set to true for Production Environment (accept real transaction).
+        \Midtrans\Config::$isProduction = false;
+        // Set sanitization on (default)
+        \Midtrans\Config::$isSanitized = true;
+        // Set 3DS transaction for credit card to true
+        \Midtrans\Config::$is3ds = true;
+
+        // Get cart items
+        $cartItems = CartItem::getItemsForUser(Yii::$app->user->id);
+
+        // Calculate total price of cart items
+        $totalPrice = 0;
+        foreach ($cartItems as $item) {
+            $totalPrice += $item['total_price'];
+        }
+
+        $params = array(
+            'transaction_details' => array(
+                'order_id' => rand(),
+                'gross_amount' => $totalPrice,
+            ),
+            'customer_details' => array(
+                'first_name' => Yii::$app->request->post('firstname'),
+                'last_name' => Yii::$app->request->post('lastname'),
+                'email' => Yii::$app->request->post('email'),
+                // 'phone' => '08111222333',
+            ),
+            'item_details' => $cartItems, // Add cart items to the transaction details
+        );
+
+        $snapToken = Snap::getSnapToken($params);
+
+        // Return the Snap token as JSON response
+        return $this->asJson(['snapToken' => $snapToken]);
     }
 }

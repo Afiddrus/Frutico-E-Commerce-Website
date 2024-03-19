@@ -12,7 +12,7 @@ use yii\bootstrap5\Nav;
 use yii\bootstrap5\NavBar;
 use yii\helpers\Url;
 
-$this->context->layout = '_guestLayout';
+$this->context->layout = 'main';
 $this->title = 'Cart';
 AppAsset::register($this);
 ?>
@@ -62,98 +62,7 @@ AppAsset::register($this);
     </div>
     <!--PreLoader Ends-->
 
-    <!-- header -->
-    <div class="top-header-area" id="sticker">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-12 col-sm-12 text-center">
-                    <div class="main-menu-wrap">
-                        <!-- logo -->
-                        <div class="site-logo">
-                            <a href="index.html">
-                                <img src="img/logo.png" alt="">
-                            </a>
-                        </div>
-                        <!-- logo -->
 
-                        <nav class="main-menu">
-                            <ul>
-                                <li class="current-list-item"><a id="home-menu" href="<?= Url::to(['/site/index']) ?>">Home</a></li>
-                                <!-- <ul class="sub-menu">
-                                    <li><a href="index.html">Static Home</a></li>
-                                    <li><a href="index_2.html">Slider Home</a></li>
-                                </ul>
-                                </li> -->
-
-                                <li><a id="shop-menu" href="<?= Url::to(['/site/shop']) ?>">Shop</a></li>
-                                <li><a id="history-menu" href="<?= Url::to(['/site/history']) ?>">History Purchase</a></li>
-                                <li>
-                                    <div class="header-icons">
-
-
-                                        <?php if (Yii::$app->user->isGuest) : ?>
-
-                                            <?= Html::a('Sign Up', ['/site/signup']) ?>
-
-
-                                            <?= Html::a('Login', ['/site/login']) ?>
-
-                                        <?php else : ?>
-
-                                            <a class="user-display-name" href="#">
-                                                <?= Yii::$app->user->identity->getDisplayName() ?>
-                                            </a>
-                                            <ul class="sub-menu">
-                                                <li>
-                                                    <?= Html::a(
-                                                        'Profile',
-                                                        ['/profile/index'],
-                                                        ['style' => 'font-weight: 700;',]
-                                                    ) ?>
-                                                </li>
-                                                <li>
-                                                    <?= Html::a(
-                                                        'Logout',
-                                                        ['/site/logout'],
-                                                        ['style' => 'font-weight: 700;', 'data-method' => 'post']
-                                                    ) ?>
-                                                </li>
-                                            </ul>
-                                        <?php endif; ?>
-                                        <a class="shopping-cart" href="/cart/index">
-                                            <i class="fas fa-shopping-cart badge-danger" id="cart-badge" style="font-weight: 700;font-size:16px" class="badge badge-light">
-                                                <span id="cart-quantity" style="font-weight: 700;font-size:14px;background-color:#F28123;margin-left:0.5vw" class="badge badge-light"><?= $this->params['cartItemCount'] ?></span>
-                                            </i>
-                                        </a>
-                                    </div>
-                                </li>
-                            </ul>
-                        </nav>
-
-                        <style>
-                            /* Style for the user's display name and hover effect */
-                            .user-display-name {
-                                color: white;
-                                font-weight: 700;
-                                text-decoration: none;
-                                transition: color 0.3s;
-                                /* Add smooth transition effect for color change */
-                            }
-
-                            /* Hover effect for the user's display name */
-                            .user-display-name:hover {
-                                color: #F28123;
-                            }
-                        </style>
-                        <a class="mobile-show search-bar-icon" href="#"><i class="fas fa-search"></i></a>
-                        <div class="mobile-menu"></div>
-                        <!-- menu end -->
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- end header -->
 
     <!-- search area -->
     <div class="search-area">
@@ -225,9 +134,10 @@ AppAsset::register($this);
                                             </td>
                                             <td class="product-name"><?php echo $item['name'] ?></td>
                                             <td class="product-price"><?php echo $item['price'] ?></td>
-                                            <td class="product-quantity">
-                                                <input type="number" min="1" class="form-control item-quantity" value="<?php echo $item['quantity']; ?>">
+                                            <td class="product-quantity" style="text-align: center;">
+                                                <input type="number" min="1" class="form-control item-quantity" value="<?php echo $item['quantity']; ?>" style="display: inline-block; width: 80px; text-align: center;">
                                             </td>
+
                                             <td class="product-total"><?php echo $item['total_price'] ?></td>
                                         </tr>
                                     <?php endforeach; ?>
@@ -332,52 +242,7 @@ AppAsset::register($this);
     </div>
     <!-- end logo carousel -->
 
-    <!-- footer -->
-    <div class="footer-area">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-3 col-md-6">
-                    <div class="footer-box about-widget">
-                        <h2 class="widget-title">About us</h2>
-                        <p>Ut enim ad minim veniam perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae.</p>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="footer-box get-in-touch">
-                        <h2 class="widget-title">Get in Touch</h2>
-                        <ul>
-                            <li>34/8, East Hukupara, Gifirtok, Sadan.</li>
-                            <li>support@fruitkha.com</li>
-                            <li>+00 111 222 3333</li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="footer-box pages">
-                        <h2 class="widget-title">Pages</h2>
-                        <ul>
-                            <li><a href="index.html">Home</a></li>
-                            <li><a href="about.html">About</a></li>
-                            <li><a href="services.html">Shop</a></li>
-                            <li><a href="news.html">News</a></li>
-                            <li><a href="contact.html">Contact</a></li>
-                        </ul>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-md-6">
-                    <div class="footer-box subscribe">
-                        <h2 class="widget-title">Subscribe</h2>
-                        <p>Subscribe to our mailing list to get the latest updates.</p>
-                        <form action="index.html">
-                            <input type="email" placeholder="Email">
-                            <button type="submit"><i class="fas fa-paper-plane"></i></button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- end footer -->
+
 
     <!-- copyright -->
     <div class="copyright">

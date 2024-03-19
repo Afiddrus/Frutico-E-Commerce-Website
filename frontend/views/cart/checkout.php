@@ -14,6 +14,15 @@ use yii\bootstrap5\Breadcrumbs;
 use yii\bootstrap5\Nav;
 use yii\bootstrap5\NavBar;
 use yii\helpers\Url;
+// Import namespace Midtrans
+use Midtrans\Snap;
+use Midtrans\Config;
+
+// Atur kunci server dan konfigurasi lainnya
+Config::$serverKey = 'SB-Mid-server-2qghlkw8gh35wmWdaFIVDfGQ';
+Config::$isProduction = false;
+Config::$isSanitized = true;
+Config::$is3ds = true;
 
 $this->context->layout = 'main';
 $this->title = 'Checkout';
@@ -62,9 +71,8 @@ $clientKey = Yii::$app->params['midtrans']['clientKey'];
 <link rel="stylesheet" href="/css/responsive.css">
 <!-- SweetAlert -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
-<script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="<?= $clientKey ?>"></script>
-
-
+<!-- Midtrans -->
+<script type="text/javascript" src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="SB-Mid-client-PSsxw4BVmroUcVAP"></script>
 <?php $this->head() ?>
 </head>
 
@@ -117,14 +125,15 @@ $clientKey = Yii::$app->params['midtrans']['clientKey'];
                                 <div class="card-body">
                                     <div class="billing-address-form">
                                         <!-- ... Form fields ... -->
-                                        <!-- <?php $form = ActiveForm::begin([
-                                                    'id' => 'checkout-form',
-                                                    'action' => ['/cart/submit-order'],
-                                                ]); ?> -->
+                                        <?php $form = ActiveForm::begin([
+                                            'id' => 'checkout-form',
+                                            'action' => ['/cart/submit-order'],
+                                        ]); ?>
 
-                                        <?= $form->field($order, 'firstname')->textInput(['id' => 'order-firstname', 'name' => 'Order[firstname]', 'value' => Yii::$app->user->identity->firstname, 'required' => true]) ?>
-                                        <?= $form->field($order, 'lastname')->textInput(['id' => 'order-lastname', 'name' => 'Order[lastname]', 'value' => Yii::$app->user->identity->lastname, 'required' => true]) ?>
-                                        <?= $form->field($order, 'email')->textInput(['id' => 'order-email', 'name' => 'Order[email]', 'value' => Yii::$app->user->identity->email, 'required' => true]) ?>
+                                        <?= $form->field($order, 'firstname')->textInput(['id' => 'order-firstname', 'name' => 'Order[firstname]', 'value' => Yii::$app->user->identity->firstname, 'required' => true, 'readonly' => true]) ?>
+                                        <?= $form->field($order, 'lastname')->textInput(['id' => 'order-lastname', 'name' => 'Order[lastname]', 'value' => Yii::$app->user->identity->lastname, 'required' => true, 'readonly' => true]) ?>
+                                        <?= $form->field($order, 'email')->textInput(['id' => 'order-email', 'name' => 'Order[email]', 'value' => Yii::$app->user->identity->email, 'required' => true, 'readonly' => true]) ?>
+
                                     </div>
                                 </div>
                                 <!-- </div> -->
@@ -288,8 +297,7 @@ $clientKey = Yii::$app->params['midtrans']['clientKey'];
 
     <!-- end check out section -->
 
-    <!-- logo carousel -->
-    <div class="logo-carousel-section">
+    <!-- <div class="logo-carousel-section">
         <div class="container">
             <div class="row">
                 <div class="col-lg-12">
@@ -313,8 +321,8 @@ $clientKey = Yii::$app->params['midtrans']['clientKey'];
                 </div>
             </div>
         </div>
-    </div>
-    <!-- end logo carousel -->
+    </div> -->
+
 
     <!-- footer -->
     <div class="footer-area">
@@ -364,66 +372,7 @@ $clientKey = Yii::$app->params['midtrans']['clientKey'];
     <!-- end footer -->
     <?php ActiveForm::end(); ?>
 
-    <?php $this->registerJs("
-$(document).ready(function() {
-    $('#pay-button').click(function() {
-        // Mengirimkan data pembayaran ke server Anda
-        $.ajax({
-            url: '" . Url::to(['/cart/submit-order']) . "',
-            method: 'POST',
-            dataType: 'json',
-            data: $('#billing-address-form').serialize(),
-            success: function(response) {
-                // Membuat permintaan ke Midtrans untuk mendapatkan Snap Token
-                $.ajax({
-                    url: 'https://api.sandbox.midtrans.com/v2/snap/token',
-                    method: 'POST',
-                    headers: {
-                        'Authorization': 'Basic ' + btoa('SB-Mid-server-2qghlkw8gh35wmWdaFIVDfGQ')
-                    },
-                    data: {
-                        transaction_details: {
-                            order_id: response.order_id,
-                            gross_amount: response.gross_amount
-                        }
-                    },
-                    success: function(data) {
-                        // Mengirimkan token Snap ke klien
-                        var snapToken = data.token;
-                        // Memunculkan jendela pembayaran dengan Snap Token
-                        snap.pay(snapToken, {
-                            onSuccess: function(result) {
-                                window.location.href = '" . Url::to(['/cart/success']) . "';
-                            },
-                            onPending: function(result) {
-                                window.location.href = '" . Url::to(['/cart/pending']) . "';
-                            },
-                            onError: function(result) {
-                                window.location.href = '" . Url::to(['/cart/error']) . "';
-                            }
-                        });
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(xhr.responseText);
-                        Swal.fire({
-                            title: 'An error occurred while processing the order.',
-                            icon: 'error',
-                        });
-                    }
-                });
-            },
-            error: function(xhr, status, error) {
-                console.error(xhr.responseText);
-                Swal.fire({
-                    title: 'An error occurred while processing the order.',
-                    icon: 'error',
-                });
-            }
-        });
-    });
-});
 
-    "); ?>
     <!-- copyright -->
     <div class="copyright">
         <div class="container">
@@ -470,7 +419,8 @@ $(document).ready(function() {
     <!-- main js -->
     <script src="/js/main.js"></script>
     <script src="/js/app.js"></script>
-    <script>
+    <!-- Backup Function Swal -->
+    <!-- <script>
         $(document).ready(function() {
             $('.boxed-btn').click(function(event) {
                 event.preventDefault();
@@ -551,44 +501,244 @@ $(document).ready(function() {
 
             });
         });
-    </script>
-
-
-    <script>
+    </script> -->
+    <!-- Backup Function API Whatsapp -->
+    <!-- <script>
         $(document).ready(function() {
             $('#pay-button').click(function() {
-                $.ajax({
-                    url: '<?= Url::to(['/cart/submit-order']) ?>', // Ganti URL dengan URL yang benar
-                    method: 'POST',
-                    dataType: 'json',
-                    data: $('#checkout-form').serialize(),
-                    success: function(response) {
-                        // Jika pesanan berhasil dibuat, panggil Snap.pay untuk membuka jendela pembayaran Snap
-                        snap.pay(response.token, {
-                            onSuccess: function(result) {
-                                // Jika pembayaran berhasil, arahkan pengguna ke halaman sukses
-                                window.location.href = '<?= Url::to(['/cart/success']) ?>';
-                            },
-                            onPending: function(result) {
-                                // Jika pembayaran tertunda, arahkan pengguna ke halaman tertunda
-                                window.location.href = '<?= Url::to(['/cart/pending']) ?>';
-                            },
-                            onError: function(result) {
-                                // Jika pembayaran gagal, arahkan pengguna ke halaman gagal
-                                window.location.href = '<?= Url::to(['/cart/error']) ?>';
-                            }
-                        });
-                    },
-                    error: function(xhr, status, error) {
-                        console.error(xhr.responseText);
-                        alert('An error occurred while processing the order.');
+                // Mendapatkan data pelanggan
+                var customerName = $('#order-firstname').val() + ' ' + $('#order-lastname').val();
+                var customerEmail = $('#order-email').val();
+                var customerAddress = $('#orderaddress-address').val();
+                var customerCity = $('#orderaddress-city').val();
+                var customerState = $('#orderaddress-state').val();
+                var customerZipcode = $('#orderaddress-zipcode').val();
+
+                // Mendapatkan daftar barang dari tabel keranjang
+                var items = [];
+                $('.table-body-row').each(function() {
+                    var productName = $(this).find('.product-name').text();
+                    var productPrice = $(this).find('.product-price').text();
+                    var productQuantity = $(this).find('.product-quantity').text();
+                    var itemText = productName + ' (Qty: ' + productQuantity + ') - ' + productPrice;
+                    items.push(itemText);
+                });
+
+                // Menghitung total harga pesanan
+                var totalPrice = '<?php echo Yii::$app->formatter->asCurrency($totalPrice) ?>';
+
+                // Mengirim pesan ke WhatsApp dengan menggunakan API WhatsApp
+                var whatsappMessage = 'Halo, saya ingin memesan barang-barang berikut:\n\n';
+                whatsappMessage += 'Pelanggan: ' + customerName + '\n';
+                whatsappMessage += 'Alamat: ' + customerAddress + ', ' + customerCity + ', ' + customerState + ' ' + customerZipcode + '\n';
+                whatsappMessage += 'Email: ' + customerEmail + '\n\n';
+                whatsappMessage += 'Pesanan:\n';
+                whatsappMessage += items.join('\n');
+                whatsappMessage += '\n\nTotal Harga: ' + totalPrice;
+                whatsappMessage += '\n\nTerima kasih atas pesanan Anda!';
+
+                // Ganti nomor WhatsApp dengan nomor Anda
+                var whatsappNumber = '6281229648915';
+
+                // Redirect pengguna ke aplikasi WhatsApp
+                // var whatsappUrl = 'https://wa.me/' + whatsappNumber + '?text=' + encodeURIComponent(whatsappMessage);
+                // window.location.href = whatsappUrl;
+
+                window.snap.embed('YOUR_SNAP_TOKEN', {
+                    embedId: 'snap-container'
+                });
+            });
+        });
+    </script> -->
+    <script>
+        $(document).ready(function() {
+            $('.boxed-btn').click(function(event) {
+                event.preventDefault();
+
+                // Mendapatkan jumlah item dalam keranjang
+                const cartItemCount = <?php echo $this->params['cartItemCount']; ?>;
+
+                // Periksa apakah keranjang kosong
+                if (cartItemCount === 0) {
+                    alert('Your cart is empty. Add items to your cart before placing an order.');
+                    return;
+                }
+
+                const $form = $('#checkout-form');
+                const data = $form.serializeArray();
+                const requiredFields = ['#order-firstname', '#order-lastname', '#order-email', '#orderaddress-address', '#orderaddress-city', '#orderaddress-state', '#orderaddress-zipcode'];
+                let isValid = true;
+
+                requiredFields.forEach(fieldId => {
+                    const fieldValue = $(fieldId).val();
+                    if (!fieldValue.trim()) {
+                        isValid = false;
+                        return false;
                     }
                 });
+
+                if (!isValid) {
+                    Swal.fire({
+                        title: 'You must fill in all required fields!',
+                        icon: 'error',
+                    }).then(function() {
+                        console.error(error);
+                    });
+
+                    return;
+                }
+
+                // Mendapatkan CSRF token
+                const csrfToken = $('meta[name="csrf-token"]').attr('content');
+                data.push({
+                    name: '_csrf',
+                    value: csrfToken
+                });
+
+                console.log(data);
+                $.ajax({
+                    method: 'POST',
+                    url: '<?php echo \yii\helpers\Url::to(['/cart/create-order']) ?>',
+                    data: data,
+                    headers: {
+                        'X-CSRF-Token': csrfToken,
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    success: function(response) {
+                        // Mendapatkan data pelanggan
+                        var customerName = $('#order-firstname').val() + ' ' + $('#order-lastname').val();
+                        var customerEmail = $('#order-email').val();
+                        var customerAddress = $('#orderaddress-address').val();
+                        var customerCity = $('#orderaddress-city').val();
+                        var customerState = $('#orderaddress-state').val();
+                        var customerZipcode = $('#orderaddress-zipcode').val();
+
+                        // Mendapatkan daftar barang dari tabel keranjang
+                        var items = [];
+                        $('.table-body-row').each(function() {
+                            var productName = $(this).find('.product-name').text();
+                            var productPrice = $(this).find('.product-price').text();
+                            var productQuantity = $(this).find('.product-quantity').text();
+                            var itemText = productName + ' (Jumlah: ' + productQuantity.trim() + ') - ' + productPrice;
+                            items.push(itemText);
+                        });
+
+                        // Menghitung total harga pesanan
+                        var totalPrice = '<?php echo Yii::$app->formatter->asCurrency($totalPrice) ?>';
+
+                        // Format total harga
+                        var formattedTotalPrice = totalPrice.replace('IDR', 'Rp ').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
+                        // Mengirim pesan ke WhatsApp dengan menggunakan API WhatsApp
+                        var whatsappMessage = 'Halo, saya ingin memesan barang-barang berikut:\n\n';
+                        whatsappMessage += 'Pelanggan: ' + customerName + '\n';
+                        whatsappMessage += 'Alamat: ' + customerAddress + ', ' + customerCity + ', ' + customerState + ' ' + customerZipcode + '\n';
+                        whatsappMessage += 'Email: ' + customerEmail + '\n\n';
+                        whatsappMessage += 'Pesanan:\n';
+                        whatsappMessage += items.join('\n');
+                        whatsappMessage += '\nTotal Harga: ' + formattedTotalPrice + '\n\n';
+                        whatsappMessage += 'Terima kasih!';
+
+
+                        // Ganti nomor WhatsApp dengan nomor Anda
+                        var whatsappNumber = '6281229648915';
+
+                        // Kirim pesan WhatsApp
+                        window.open('https://api.whatsapp.com/send?phone=' + whatsappNumber + '&text=' + encodeURIComponent(whatsappMessage));
+
+                        Swal.fire({
+                            title: 'Order successfully placed!',
+                            icon: 'success',
+                        }).then(function() {
+                            // Redirect ke halaman home setelah mengklik tombol OK
+                            window.location.href = '<?php echo \yii\helpers\Url::to(['/site/index']) ?>';
+                        });
+                    },
+                    error: function(error) {
+                        Swal.fire({
+                            title: 'An error occurred while processing the order.',
+                            text: error.responseText,
+                            icon: 'error',
+                        }).then(function() {
+                            console.error(error);
+                        });
+                    },
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('X-CSRF-Token', csrfToken);
+                    },
+                    xhrFields: {
+                        withCredentials: true
+                    }
+                });
+
             });
         });
     </script>
 
 
+
+    <!-- <script>
+        $(document).ready(function() {
+            $('#pay-button').click(async function() {
+                try {
+                    // Mendapatkan data pelanggan
+                    var customerName = $('#order-firstname').val() + ' ' + $('#order-lastname').val();
+                    var customerEmail = $('#order-email').val();
+                    var customerAddress = $('#orderaddress-address').val();
+                    var customerCity = $('#orderaddress-city').val();
+                    var customerState = $('#orderaddress-state').val();
+                    var customerZipcode = $('#orderaddress-zipcode').val();
+
+                    // Mendapatkan daftar barang dari tabel keranjang
+                    var items = [];
+                    $('.table-body-row').each(function() {
+                        var productName = $(this).find('.product-name').text();
+                        var productPrice = $(this).find('.product-price').text();
+                        var productQuantity = $(this).find('.product-quantity').text();
+                        var itemText = productName + ' (Qty: ' + productQuantity + ') - ' + productPrice;
+                        items.push(itemText);
+                    });
+
+                    // Menghitung total harga pesanan
+                    var totalPrice = '<?php echo Yii::$app->formatter->asCurrency($totalPrice) ?>';
+
+                    // URL endpoint untuk mem-post data ke actionMidtrans
+                    var postUrl = '<?php echo Yii::$app->urlManager->createUrl(["cart/midtrans"]) ?>';
+
+                    // Data yang akan dipost
+                    var postData = {
+                        firstname: $('#order-firstname').val(),
+                        lastname: $('#order-lastname').val(),
+                        email: $('#order-email').val(),
+                        address: $('#orderaddress-address').val(),
+                        city: $('#orderaddress-city').val(),
+                        state: $('#orderaddress-state').val(),
+                        zipcode: $('#orderaddress-zipcode').val(),
+                        total_price: totalPrice
+                    };
+
+                    const response = await fetch(postUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(postData)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to post data');
+                    }
+
+                    // Redirect pengguna ke aplikasi WhatsApp
+                    // var whatsappUrl = 'https://wa.me/' + whatsappNumber + '?text=' + encodeURIComponent(whatsappMessage);
+                    // window.location.href = whatsappUrl;
+                } catch (error) {
+                    console.error('Error:', error);
+                    // Handle error as needed
+                }
+            });
+        });
+    </script>-->
 
     <?php $this->endBody() ?>
 

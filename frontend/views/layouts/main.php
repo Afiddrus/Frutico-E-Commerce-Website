@@ -97,6 +97,13 @@ AppAsset::register($this);
                                 <li><a id="shop-menu" href="<?= Url::to(['/site/shop']) ?>">Shop</a></li>
                                 <li><a id="history-menu" href="<?= Url::to(['/site/history']) ?>">History Purchase</a></li>
                                 <li>
+                                    <a class="shopping-cart" href="/cart/index">
+                                        <i class="fas fa-shopping-cart " id="cart-badge" style="font-weight: 700;font-size:16px" class="badge badge-light">
+                                            <span id="cart-quantity" style="font-weight: 700;font-size:14px;background-color:#F28123;margin-left:0.5vw" class="badge badge-light"><?= $this->params['cartItemCount'] ?></span>
+                                        </i>
+                                    </a>
+                                </li>
+                                <li>
                                     <div class="header-icons">
                                         <?php if (Yii::$app->user->isGuest) : ?>
 
@@ -127,11 +134,7 @@ AppAsset::register($this);
                                                 </li>
                                             </ul>
                                         <?php endif; ?>
-                                        <a class="shopping-cart" href="/cart/index">
-                                            <i class="fas fa-shopping-cart " id="cart-badge" style="font-weight: 700;font-size:16px" class="badge badge-light">
-                                                <span id="cart-quantity" style="font-weight: 700;font-size:14px;background-color:#F28123;margin-left:0.5vw" class="badge badge-light"><?= $this->params['cartItemCount'] ?></span>
-                                            </i>
-                                        </a>
+
                                     </div>
                                 </li>
                             </ul>
