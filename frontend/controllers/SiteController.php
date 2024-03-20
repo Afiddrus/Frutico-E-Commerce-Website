@@ -203,16 +203,32 @@ class SiteController extends BaseController
     }
 
     /**
-     * Displays about page.
+     * Displays detail product page.
      *
-     * @param int|null $id ID produk
+     * @param int|null $id Product ID
      * @return mixed
+     * @throws \yii\web\NotFoundHttpException If the product is not found
      */
     public function actionDetailProduct($id = null)
     {
-        $model = $id ? Product::findOne($id) : new Product();
-        return $this->render('detail-product', ['model' => $model]);
+        $model = $id ? Product::findOne($id) : null;
+        if (!$model) {
+            throw new \yii\web\NotFoundHttpException('The requested product does not exist.');
+        }
+
+        $relatedProducts = Product::find()
+            ->where(['!=', 'id', $id]) // Exclude the current product
+            ->orderBy('RAND()') // Order by random
+            ->limit(3) // Get three random products
+            ->all();
+
+        return $this->render('detail-product', [
+            'model' => $model,
+            'relatedProducts' => $relatedProducts,
+
+        ]);
     }
+
 
     public function actionAdd()
     {
