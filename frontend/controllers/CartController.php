@@ -392,8 +392,6 @@ class CartController extends BaseController
         }
     }
 
-
-
     // public function actionCreateOrder()
     // {
     //     // Set Midtrans Configurations
@@ -430,6 +428,38 @@ class CartController extends BaseController
     //         $orderAddress->country = isset($postData['country']) ? $postData['country'] : '';
     //         $orderAddress->zipcode = isset($postData['zipcode']) ? $postData['zipcode'] : '';
 
+    //         // Siapkan array untuk menyimpan detail item
+    //         $itemDetails = [];
+
+    //         // Loop melalui setiap item dalam keranjang belanja dan tambahkan detailnya ke dalam array itemDetails
+    //         foreach ($cartItems as $item) {
+    //             $itemDetails[] = [
+    //                 'id' => $item['product_id'], // ID produk
+    //                 'price' => $item['price'], // Harga produk per item
+    //                 'quantity' => $item['quantity'], // Jumlah item
+    //                 'name' => $item['product_name'], // Nama produk
+    //             ];
+    //         }
+
+    //         $params = [
+    //             'transaction_details' => [
+    //                 'order_id' => $order->transaction_id, // ID pesanan (Anda mungkin perlu mengganti ini dengan ID pesanan yang unik)
+    //                 'gross_amount' => $order->total_price, // Total harga pesanan
+    //             ],
+    //             'customer_details' => [
+    //                 'first_name' => $order->firstname, // Nama depan pelanggan
+    //                 'last_name' => $order->lastname, // Nama belakang pelanggan
+    //                 'email' => $order->email, // Email pelanggan
+    //                 'address' => $orderAddress->address, // Alamat pelanggan
+    //                 'city' => $orderAddress->city, // Kota pelanggan
+    //                 'state' => $orderAddress->state, // Provinsi pelanggan
+    //                 'country' => $orderAddress->country, // Negara pelanggan
+    //                 'zipcode' => $orderAddress->zipcode, // Kode pos pelanggan
+    //                 // 'phone' => '08111222333', // Nomor telepon pelanggan
+    //             ],
+    //             'item_details' => $itemDetails, // Detail item dari keranjang belanja
+    //         ];
+
     //         if ($order->validate() && $orderAddress->validate()) {
     //             $transaction = Yii::$app->db->beginTransaction();
     //             try {
@@ -438,41 +468,16 @@ class CartController extends BaseController
     //                     if ($orderAddress->save()) {
     //                         // Hapus item keranjang belanja setelah membuat pesanan baru
     //                         CartItem::clearCart(Yii::$app->user->id);
+    //                         $snapToken = \Midtrans\Snap::getSnapToken($params);
+    //                         echo $snapToken;
+
 
     //                         // Ambil item keranjang belanja
     //                         $cartItems = CartItem::getItemsForUser(Yii::$app->user->id);
 
-    //                         // Siapkan array untuk menyimpan detail item
-    //                         $itemDetails = [];
 
-    //                         // Loop melalui setiap item dalam keranjang belanja dan tambahkan detailnya ke dalam array itemDetails
-    //                         foreach ($cartItems as $item) {
-    //                             $itemDetails[] = [
-    //                                 'id' => $item['product_id'], // ID produk
-    //                                 'price' => $item['price'], // Harga produk per item
-    //                                 'quantity' => $item['quantity'], // Jumlah item
-    //                                 'name' => $item['product_name'], // Nama produk
-    //                             ];
-    //                         }
 
-    //                         $params = [
-    //                             'transaction_details' => [
-    //                                 'order_id' => $order->transaction_id, // ID pesanan (Anda mungkin perlu mengganti ini dengan ID pesanan yang unik)
-    //                                 'gross_amount' => $order->total_price, // Total harga pesanan
-    //                             ],
-    //                             'customer_details' => [
-    //                                 'first_name' => $order->firstname, // Nama depan pelanggan
-    //                                 'last_name' => $order->lastname, // Nama belakang pelanggan
-    //                                 'email' => $order->email, // Email pelanggan
-    //                                 'address' => $orderAddress->address, // Alamat pelanggan
-    //                                 'city' => $orderAddress->city, // Kota pelanggan
-    //                                 'state' => $orderAddress->state, // Provinsi pelanggan
-    //                                 'country' => $orderAddress->country, // Negara pelanggan
-    //                                 'zipcode' => $orderAddress->zipcode, // Kode pos pelanggan
-    //                                 // 'phone' => '08111222333', // Nomor telepon pelanggan
-    //                             ],
-    //                             'item_details' => $itemDetails, // Detail item dari keranjang belanja
-    //                         ];
+
 
     //                         $transaction->commit();
     //                         return $this->asJson(['success' => true, 'params' => $params, 'order_id' => $order->transaction_id]);

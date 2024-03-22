@@ -47,10 +47,10 @@ use dosamigos\ckeditor\CKEditor;
         {error}
         </div>
     ',
-        'inputOptions' => ['class' => "form-control", 'multiple' => true]
+        'inputOptions' => ['class' => "form-control", 'multiple' => false]
     ])->fileInput() ?>
 
-    <?= $form->field($model, 'multipleImageFile[]')->fileInput(['multiple' => true]) ?>
+    <!-- <?= $form->field($model, 'multipleImageFile[]')->fileInput(['multiple' => true]) ?> -->
 
     <?= $form->field($model, 'price')->textInput([
         'maxlength' => true,

@@ -18,9 +18,9 @@ use kartik\select2\Select2;
 
     <?= $form->field($model, 'status', ['options' => ['class' => 'status-field']])->dropDownList(
         [
-            Order::STATUS_COMPLETED => 'Completed',
-            Order::STATUS_DRAFT => 'Draft',
-            Order::STATUS_FAILURED => 'Failured',
+            Order::STATUS_COMPLETED => 'Dikirim',
+            Order::STATUS_DRAFT => 'Belum Dibayar',
+            Order::STATUS_FAILURED => 'Gagal',
             // Add other status options here
         ],
         ['class' => 'form-control']

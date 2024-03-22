@@ -49,6 +49,8 @@ $this->params['breadcrumbs'][] = $this->title;
                         </div>
                         <?php ActiveForm::end(); ?>
                         <div class="signin">
+                            <span> If you forgot your password you can <?= Html::a('reset it', ['site/request-password-reset']) ?>.</span>
+                            <br>
                             <span>Doesn't have an account? <?= Html::a('Sign up here', ['site/signup']) ?></span>
                         </div>
                     </div>

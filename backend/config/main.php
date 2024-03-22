@@ -11,10 +11,20 @@ return [
     'basePath' => dirname(__DIR__),
     'controllerNamespace' => 'backend\controllers',
     'bootstrap' => ['log'],
-    'modules' => [],
+    'modules' => ['gridview' =>  [
+        'class' => '\kartik\grid\Module',
+    ],],
     'components' => [
         'request' => [
             'csrfParam' => '_csrf-backend',
+        ],
+        'i18n' => [
+            'translations' => [
+                'kvgrid' => [
+                    'class' => 'yii\i18n\PhpMessageSource',
+                    'basePath' => '@vendor/kartik-v/yii2-grid/messages',
+                ],
+            ],
         ],
         'user' => [
             'identityClass' => 'common\models\User',
