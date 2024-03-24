@@ -225,7 +225,6 @@ class SiteController extends BaseController
         return $this->render('detail-product', [
             'model' => $model,
             'relatedProducts' => $relatedProducts,
-
         ]);
     }
 

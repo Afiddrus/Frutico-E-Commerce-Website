@@ -325,32 +325,6 @@ $clientKey = Yii::$app->params['midtrans']['clientKey'];
 
     <?php ActiveForm::end(); ?>
 
-
-    <!-- copyright -->
-    <div class="copyright">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-6 col-md-12">
-                    <p>Copyrights &copy; 2019 - <a href="https://imransdesign.com/">Imran Hossain</a>, All Rights Reserved.<br>
-                        Distributed By - <a href="https://themewagon.com/">Themewagon</a>
-                    </p>
-                </div>
-                <div class="col-lg-6 text-right col-md-12">
-                    <div class="social-icons">
-                        <ul>
-                            <li><a href="#" target="_blank"><i class="fab fa-facebook-f"></i></a></li>
-                            <li><a href="#" target="_blank"><i class="fab fa-twitter"></i></a></li>
-                            <li><a href="#" target="_blank"><i class="fab fa-instagram"></i></a></li>
-                            <li><a href="#" target="_blank"><i class="fab fa-linkedin"></i></a></li>
-                            <li><a href="#" target="_blank"><i class="fab fa-dribbble"></i></a></li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <!-- end copyright -->
-
     <!-- jquery -->
     <script src="/js/jquery-1.11.3.min.js"></script>
     <!-- bootstrap -->
@@ -503,15 +477,13 @@ $clientKey = Yii::$app->params['midtrans']['clientKey'];
             });
         });
     </script> -->
-    <script>
+    <script type="text/javascript">
         $(document).ready(function() {
-            $('.boxed-btn').click(function(event) {
+            $('.boxed-btn').click(async function(event) {
                 event.preventDefault();
 
-                // Mendapatkan jumlah item dalam keranjang
                 const cartItemCount = <?php echo $this->params['cartItemCount']; ?>;
 
-                // Periksa apakah keranjang kosong
                 if (cartItemCount === 0) {
                     alert('Your cart is empty. Add items to your cart before placing an order.');
                     return;
@@ -534,10 +506,7 @@ $clientKey = Yii::$app->params['midtrans']['clientKey'];
                     Swal.fire({
                         title: 'You must fill in all required fields!',
                         icon: 'error',
-                    }).then(function() {
-                        console.error(error);
                     });
-
                     return;
                 }
 
@@ -548,87 +517,44 @@ $clientKey = Yii::$app->params['midtrans']['clientKey'];
                     value: csrfToken
                 });
 
-                console.log(data);
-                $.ajax({
-                    method: 'POST',
-                    url: '<?php echo \yii\helpers\Url::to(['/cart/create-order']) ?>',
-                    data: data,
-                    headers: {
-                        'X-CSRF-Token': csrfToken,
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    success: function(response) {
-                        // Mendapatkan data pelanggan
-                        var customerName = $('#order-firstname').val() + ' ' + $('#order-lastname').val();
-                        var customerEmail = $('#order-email').val();
-                        var customerAddress = $('#orderaddress-address').val();
-                        var customerCity = $('#orderaddress-city').val();
-                        var customerState = $('#orderaddress-state').val();
-                        var customerZipcode = $('#orderaddress-zipcode').val();
+                try {
+                    const response = await $.ajax({
+                        method: 'POST',
+                        url: '<?php echo \yii\helpers\Url::to(['/cart/create-order']) ?>',
+                        data: data,
+                        headers: {
+                            'X-CSRF-Token': csrfToken,
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        xhrFields: {
+                            withCredentials: false
+                        }
+                    });
 
-                        // Mendapatkan daftar barang dari tabel keranjang
-                        var items = [];
-                        $('.table-body-row').each(function() {
-                            var productName = $(this).find('.product-name').text();
-                            var productPrice = $(this).find('.product-price').text();
-                            var productQuantity = $(this).find('.product-quantity').text();
-                            var itemText = productName + ' (Jumlah: ' + productQuantity.trim() + ') - ' + productPrice;
-                            items.push(itemText);
-                        });
+                    console.log(response);
 
-                        // Menghitung total harga pesanan
-                        var totalPrice = '<?php echo Yii::$app->formatter->asCurrency($totalPrice) ?>';
-
-                        // Format total harga
-                        var formattedTotalPrice = totalPrice.replace('IDR', 'Rp ').replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-
-                        // Mengirim pesan ke WhatsApp dengan menggunakan API WhatsApp
-                        var whatsappMessage = 'Halo, saya ingin memesan barang-barang berikut:\n\n';
-                        whatsappMessage += 'Pelanggan: ' + customerName + '\n';
-                        whatsappMessage += 'Alamat: ' + customerAddress + ', ' + customerCity + ', ' + customerState + ' ' + customerZipcode + '\n';
-                        whatsappMessage += 'Email: ' + customerEmail + '\n\n';
-                        whatsappMessage += 'Pesanan:\n';
-                        whatsappMessage += items.join('\n');
-                        whatsappMessage += '\nTotal Harga: ' + formattedTotalPrice + '\n\n';
-                        whatsappMessage += 'Terima kasih!';
-
-
-                        // Ganti nomor WhatsApp dengan nomor Anda
-                        var whatsappNumber = '6281229648915';
-                        // 6281326962329
-
-                        // Kirim pesan WhatsApp
-                        window.open('https://api.whatsapp.com/send?phone=' + whatsappNumber + '&text=' + encodeURIComponent(whatsappMessage));
-
-                        Swal.fire({
-                            title: 'Order successfully placed!',
-                            icon: 'success',
-                        }).then(function() {
-                            // Redirect ke halaman home setelah mengklik tombol OK
-                            window.location.href = '<?php echo \yii\helpers\Url::to(['/site/index']) ?>';
-                        });
-                    },
-                    error: function(error) {
-                        Swal.fire({
-                            title: 'An error occurred while processing the order.',
-                            text: error.responseText,
-                            icon: 'error',
-                        }).then(function() {
-                            console.error(error);
-                        });
-                    },
-                    beforeSend: function(xhr) {
-                        xhr.setRequestHeader('X-CSRF-Token', csrfToken);
-                    },
-                    xhrFields: {
-                        withCredentials: true
+                    if (response.success) {
+                        if (response.snapToken) {
+                            console.log("Snap Token:", response.snapToken);
+                            // Redirect to Snap Payment Page with the generated snap token
+                            window.snap.pay(response.snapToken);
+                        } else {
+                            alert('Snap token is undefined.');
+                        }
+                    } else {
+                        alert('Failed to create order: ' + response.message);
                     }
-                });
-
+                } catch (error) {
+                    Swal.fire({
+                        title: 'An error occurred while processing the order.',
+                        text: error.responseText,
+                        icon: 'error',
+                    });
+                    console.error(error);
+                }
             });
         });
     </script>
-
 
 
     <!-- <script>

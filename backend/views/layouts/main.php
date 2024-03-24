@@ -44,7 +44,7 @@ $superAdmin = Yii::$app->user->identity->status == 12;
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?php echo Yii::$app->homeUrl ?>">
                 <div class="sidebar-brand-text mx-3">FRUTICO <sup></sup></div>
             </a>
 

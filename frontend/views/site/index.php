@@ -11,81 +11,14 @@ use yii\widgets\ListView;
 
 $this->title = 'FRUTICO';
 
-// Register your CSS files
-$this->registerCssFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . 'https://fonts.googleapis.com/css?family=Open+Sans:300,400,700');
-$this->registerCssFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . 'https://fonts.googleapis.com/css?family=Open+Sans:300,400,700');
-$this->registerCssFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . 'https://fonts.googleapis.com/css?family=Poppins:400,700&display=swap');
-$this->registerCssFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/css/all.min.css');
-$this->registerCssFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/bootstrap/css/bootstrap.min.css');
-$this->registerCssFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/css/owl.carousel.css');
-$this->registerCssFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/css/magnific-popup.css');
-$this->registerCssFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/css/animate.css');
-$this->registerCssFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/css/meanmenu.min.css');
-$this->registerCssFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/css/main.css');
-$this->registerCssFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/css/responsive.css');
-// ... register other CSS files ...
 
-// Register your JS files
-$this->registerJsFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/js/jquery-1.11.3.min.js');
-$this->registerJsFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/bootstrap/js/bootstrap.min.js');
-$this->registerJsFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/js/jquery.countdown.js');
-$this->registerJsFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/js/jquery.isotope-3.0.6.min.js');
-$this->registerJsFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/js/waypoints.js');
-$this->registerJsFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/js/owl.carousel.min.js');
-$this->registerJsFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/js/jquery.magnific-popup.min.js');
-$this->registerJsFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/js/jquery.meanmenu.min.js');
-$this->registerJsFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/js/sticker.js');
-$this->registerJsFile(Yii::$app->assetManager->getPublishedUrl('@web/assets') . '/js/main.js');
-// ... register other JS files ...
 
 $this->context->layout = 'main';
 $directoryAsset = Yii::$app->assetManager->getPublishedUrl('@app/web');
 $faviconUrl = 'https://i.ibb.co/W3P0ZkK/logo-removebg.png'; // Sesuaikan dengan link favicon yang Anda berikan
 ?>
 
-<!-- favicon -->
-<link rel="shortcut icon" type="image/png" href="<?= $faviconUrl ?>">
-<!-- google font -->
-<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css?family=Poppins:400,700&display=swap" rel="stylesheet">
-<!-- fontawesome -->
-<link rel="stylesheet" href="/css/all.min.css">
-<!-- bootstrap -->
-<link rel="stylesheet" href="/bootstrap/css/bootstrap.min.css">
-<!-- owl carousel -->
-<link rel="stylesheet" href="/css/owl.carousel.css">
-<!-- magnific popup -->
-<link rel="stylesheet" href="/css/magnific-popup.css">
-<!-- animate css -->
-<link rel="stylesheet" href="/css/animate.css">
-<!-- mean menu css -->
-<link rel="stylesheet" href="/css/meanmenu.min.css">
-<!-- main style -->
-<link rel="stylesheet" href="/css/main.css">
-<!-- responsive -->
-<link rel="stylesheet" href="/css/responsive.css">
 
-
-<!-- jquery -->
-<script src="/js/jquery-1.11.3.min.js"></script>
-<!-- bootstrap -->
-<script src="/js/bootstrap/bootstrap.min.js"></script>
-<!-- count down -->
-<script src="/js/jquery.countdown.js"></script>
-<!-- isotope -->
-<script src="/js/jquery.isotope-3.0.6.min.js"></script>
-<!-- waypoints -->
-<script src="/js/waypoints.js"></script>
-<!-- owl carousel -->
-<script src="/js/owl.carousel.min.js"></script>
-<!-- magnific popup -->
-<script src="/js/jquery.magnific-popup.min.js"></script>
-<!-- mean menu -->
-<script src="/js/jquery.meanmenu.min.js"></script>
-<!-- sticker js -->
-<script src="/js/sticker.js"></script>
-<!-- main js -->
-<script src="/js/main.js"></script>
 
 <!-- hero area -->
 <div class="hero-area hero-bg">
@@ -97,7 +30,7 @@ $faviconUrl = 'https://i.ibb.co/W3P0ZkK/logo-removebg.png'; // Sesuaikan dengan 
                         <p class="subtitle">Fresh & Organic</p>
                         <h1>Delicious Seasonal Fruits</h1>
                         <div class="hero-btns">
-                            <a href="shop.html" class="boxed-btn">Fruit Collection</a>
+                            <a href="<?= Yii::$app->urlManager->createUrl(['site/shop']) ?>" class="boxed-btn">Fruit Collection</a>
                             <a href="contact.html" class="bordered-btn">Contact Us</a>
                         </div>
                     </div>
@@ -207,7 +140,7 @@ $faviconUrl = 'https://i.ibb.co/W3P0ZkK/logo-removebg.png'; // Sesuaikan dengan 
                             </span>
                         </div>
                     </div>
-                    <img src="img/a.jpg" alt="">
+                    <img src="https://i.ibb.co/jLgFSX2/a.jpg" alt="">
                 </div>
             </div>
             <!--Content Column-->

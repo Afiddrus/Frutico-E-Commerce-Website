@@ -27,8 +27,8 @@ $this->params['breadcrumbs'][] = $this->title;
 
     <i style="display: none;" class="fas fa-chevron-down"></i>
 
-    <?php // echo $this->render('_search', ['model' => $searchModel]); 
-    ?>
+    <!-- <?php echo $this->render('_search', ['model' => $searchModel]);
+            ?> -->
 
 
     <?= GridView::widget([
@@ -43,8 +43,8 @@ $this->params['breadcrumbs'][] = $this->title;
                 'content' =>
                 ExportMenu::widget([
                     'dataProvider' => $dataProvider,
-                    'columns' => array_keys($dataProvider->getModels()[0]->attributes), // Get all columns
-                    'filename' => 'exported-data', // Export file name
+                    'columns' => array_keys($dataProvider->getModels()[0]->attributes),
+                    'filename' => 'Orders Data',
                     'dropdownOptions' => [
                         'label' => 'Export',
                         'class' => 'btn btn-outline-secondary',
@@ -53,9 +53,25 @@ $this->params['breadcrumbs'][] = $this->title;
                         ],
                     ],
                     'exportConfig' => [
-                        ExportMenu::CSV => [
+                        ExportMenu::FORMAT_HTML => [
+                            'label' => 'Save as HTML',
+                            'icon' => 'fas fa-file-code',
+                            'iconOptions' => ['class' => 'text-info'],
+                            'showHeader' => true,
+                            'showPageSummary' => true,
+                            'showFooter' => true,
+                            'showCaption' => true,
+                            'filename' => 'grid-export',
+                            'alertMsg' => 'The HTML export file will be generated for download.',
+                            'options' => ['title' => 'Hyper Text Markup Language'],
+                            'mime' => 'text/html',
+                            'config' => [
+                                'cssFile' => 'https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css'
+                            ]
+                        ],
+                        ExportMenu::FORMAT_CSV => [
                             'label' => 'Save as CSV',
-                            'icon' => 'file-code-o',
+                            'icon' => 'fas fa-file-code',
                             'iconOptions' => ['class' => 'text-success'],
                             'showHeader' => true,
                             'showPageSummary' => true,
@@ -70,16 +86,53 @@ $this->params['breadcrumbs'][] = $this->title;
                                 'rowDelimiter' => "\r\n",
                             ]
                         ],
+                        ExportMenu::FORMAT_EXCEL => [
+                            'label' => 'Save as Excel',
+                            'icon' => 'fas fa-file-excel',
+                            'iconOptions' => ['class' => 'text-success'],
+                            'showHeader' => true,
+                            'showPageSummary' => true,
+                            'showFooter' => true,
+                            'showCaption' => true,
+                            'filename' => 'grid-export',
+                            'alertMsg' => 'The Excel export file will be generated for download.',
+                            'mime' => 'application/vnd.ms-excel',
+                            'config' => [
+                                'worksheet' => 'Worksheet',
+                                'cssFile' => ''
+                            ]
+                        ],
+                        ExportMenu::FORMAT_PDF => [
+                            'label' => 'Save as PDF',
+                            'icon' => 'fas fa-file-pdf',
+                            'iconOptions' => ['class' => 'text-danger'],
+                            'showHeader' => true,
+                            'showPageSummary' => true,
+                            'showFooter' => true,
+                            'showCaption' => true,
+                            'filename' => 'grid-export',
+                            'alertMsg' => 'The PDF export file will be generated for download.',
+                            'options' => ['title' => 'Portable Document Format'],
+                            'mime' => 'application/pdf',
+                            'config' => [
+                                'mode' => 'c',
+                                'format' => 'A4-L',
+                                'destination' => 'D',
+                                'marginTop' => 20,
+                                'marginBottom' => 20,
+                                'cssInline' => '.kv-wrap{padding:20px;}' // adjust your css
+                            ]
+                        ],
                     ],
                 ]),
             ],
-            '{toggleData}', // Jika Anda ingin menggunakan tombol toggleData
+            '{toggleData}', // If you want to use the toggleData button
         ],
         'pjax' => true,
         'bordered' => true,
         'striped' => true,
         'condensed' => false,
-        'responsive' => false,
+        'responsive' => true,
         'hover' => true,
         'floatHeader' => true,
         'panel' => [

@@ -7,6 +7,8 @@ use common\models\Order;
 use common\models\OrderAddress;
 use common\models\OrderItem;
 use common\models\Product;
+use common\components\Midtrans;
+
 use frontend\base\Controller as BaseController;
 use Yii;
 use yii\db\Transaction;
@@ -327,42 +329,40 @@ class CartController extends BaseController
         if (Yii::$app->request->isAjax) {
             $postData = Yii::$app->request->post();
 
-            // Mendapatkan data pelanggan
-            $firstname = isset($postData['Order']['firstname']) ? $postData['Order']['firstname'] : '';
-            $lastname = isset($postData['Order']['lastname']) ? $postData['Order']['lastname'] : '';
-            $email = isset($postData['Order']['email']) ? $postData['Order']['email'] : '';
+            $productId = isset($postData['product_id']) ? $postData['product_id'] : null;
 
-            // Mendapatkan data alamat
-            $address = isset($postData['OrderAddress']['address']) ? $postData['OrderAddress']['address'] : '';
-            $city = isset($postData['OrderAddress']['city']) ? $postData['OrderAddress']['city'] : '';
-            $state = isset($postData['OrderAddress']['state']) ? $postData['OrderAddress']['state'] : '';
-            $country = isset($postData['OrderAddress']['country']) ? $postData['OrderAddress']['country'] : '';
-            $zipcode = isset($postData['OrderAddress']['zipcode']) ? $postData['OrderAddress']['zipcode'] : '';
+            // Mengambil informasi pengguna
+            $user = Yii::$app->user->identity;
 
-            // Mendapatkan daftar barang dari tabel keranjang
+            // Mendapatkan nilai firstname, lastname, dan email dari informasi pengguna
+            $firstname = $user->firstname;
+            $lastname = $user->lastname;
+            $email = $user->email;
+
+            // Deklarasi variabel untuk data keranjang belanja
             $cartItems = CartItem::getItemsForUser(Yii::$app->user->id);
+            $productQuantity = CartItem::getTotalQuantityForUser(Yii::$app->user->id);
             $totalPrice = CartItem::getTotalPriceForUser(Yii::$app->user->id);
 
-            // Buat model Order
             $order = new Order();
             $order->firstname = $firstname;
             $order->lastname = $lastname;
             $order->email = $email;
-            $order->total_price = $totalPrice; // Total harga pesanan
-            $order->status = Order::STATUS_FAILURED;
+            $order->total_price = isset($postData['total_price']) ? $postData['total_price'] : 0;
+            $order->status = Order::STATUS_COMPLETED;
             $order->transaction_id = sprintf('%04d', rand(0, 9999));
+
             $order->created_at = time();
+
             $order->created_by = Yii::$app->user->id;
 
-            // Buat model OrderAddress
             $orderAddress = new OrderAddress();
-            $orderAddress->address = $address;
-            $orderAddress->city = $city;
-            $orderAddress->state = $state;
-            $orderAddress->country = $country;
-            $orderAddress->zipcode = $zipcode;
+            $orderAddress->address = isset($postData['address']) ? $postData['address'] : '';
+            $orderAddress->city = isset($postData['city']) ? $postData['city'] : '';
+            $orderAddress->state = isset($postData['state']) ? $postData['state'] : '';
+            $orderAddress->country = isset($postData['country']) ? $postData['country'] : '';
+            $orderAddress->zipcode = isset($postData['zipcode']) ? $postData['zipcode'] : '';
 
-            // Validasi model
             if ($order->validate() && $orderAddress->validate()) {
                 $transaction = Yii::$app->db->beginTransaction();
                 try {
@@ -370,10 +370,40 @@ class CartController extends BaseController
                         $orderAddress->order_id = $order->id;
                         if ($orderAddress->save()) {
                             // Hapus item keranjang belanja setelah membuat pesanan baru
-                            CartItem::clearCart(Yii::$app->user->id);
+                            CartItem::clearCart(currUserId());
 
                             $transaction->commit();
-                            return $this->asJson(['success' => true, 'message' => 'Pesanan berhasil ditempatkan.', 'orderId' => $order->id]);
+
+                            // Data transaksi untuk dikirim ke Midtrans
+                            $transactionDetails = [
+                                'order_id' => $order->transaction_id,
+                                'gross_amount' => $totalPrice,
+                            ];
+
+                            // Data pelanggan untuk dikirim ke Midtrans
+                            $customerDetails = [
+                                'first_name' => $firstname,
+                                'last_name' => $lastname,
+                                'email' => $email,
+                                'billing_address' => [
+                                    'address' => $orderAddress->address,
+                                    'city' => $orderAddress->city,
+                                    'state' => $orderAddress->state,
+                                    'country_code' => 'IDN',
+                                    'postal_code' => $orderAddress->zipcode,
+                                ],
+                            ];
+
+                            // Data yang akan dikirim ke Midtrans
+                            $params = [
+                                'transaction_details' => $transactionDetails,
+                                'customer_details' => $customerDetails,
+                            ];
+
+                            // Mendapatkan snapToken dari Midtrans
+                            $snapToken = Midtrans::getSnapToken($params);
+
+                            return $this->asJson(['success' => true, 'message' => 'Pesanan berhasil ditempatkan.', 'snapToken' => $snapToken]);
                         } else {
                             $transaction->rollBack();
                             return $this->asJson(['success' => false, 'message' => 'Gagal menyimpan alamat pesanan.', 'errors' => $orderAddress->errors]);
@@ -391,6 +421,8 @@ class CartController extends BaseController
             }
         }
     }
+
+
 
     // public function actionCreateOrder()
     // {

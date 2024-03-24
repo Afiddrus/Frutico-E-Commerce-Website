@@ -50,6 +50,27 @@ AppAsset::register($this);
     <link rel="stylesheet" href="/css/main.css">
     <!-- responsive -->
     <link rel="stylesheet" href="/css/responsive.css">
+
+    <!-- jquery -->
+    <script src="/js/jquery-1.11.3.min.js"></script>
+    <!-- bootstrap -->
+    <script src="/bootstrap/js/bootstrap.min.js"></script>
+    <!-- count down -->
+    <script src="/js/jquery.countdown.js"></script>
+    <!-- isotope -->
+    <script src="/js/jquery.isotope-3.0.6.min.js"></script>
+    <!-- waypoints -->
+    <script src="/js/waypoints.js"></script>
+    <!-- owl carousel -->
+    <script src="/js/owl.carousel.min.js"></script>
+    <!-- magnific popup -->
+    <script src="/js/jquery.magnific-popup.min.js"></script>
+    <!-- mean menu -->
+    <script src="/js/jquery.meanmenu.min.js"></script>
+    <!-- sticker js -->
+    <script src="/js/sticker.js"></script>
+    <!-- main js -->
+    <script src="/js/main.js"></script>
     <?php $this->head() ?>
 
 </head>
@@ -97,12 +118,14 @@ AppAsset::register($this);
                         <p class="single-product-pricing"><span>Per Kg</span><?php echo Yii::$app->formatter->asCurrency($model->price) ?></p>
                         <p><?php echo $model->description ?></p>
                         <div class="single-product-form">
-                            <form action="index.html">
-                                <input type="number" placeholder="0">
+                            <form id="addToCartForm" action="<?php echo Url::to(['/cart/add', 'id' => $model->id]) ?>" method="post">
+                                <input type="number" id="quantityInput" name="quantity" min="1" placeholder="0">
+                                <br>
+                                <a href="<?php echo Url::to(['/cart/add', 'id' => $model->id]) ?>" class="cart-btn btn-add-to-cart" onclick="addToCartAndDisableButton(this, <?php echo $model->id ?>); return false;" style="  text-decoration: none;">
+                                    <i class="fas fa-shopping-cart"></i> Add to Cart
+                                </a>
                             </form>
-                            <a href="<?php echo Url::to(['/cart/add', 'id' => $model->id]) ?>" class="cart-btn btn-add-to-cart" onclick="addToCartAndDisableButton(this, <?php echo $model->id ?>); return false;" style="  text-decoration: none;">
-                                <i class="fas fa-shopping-cart"></i> Add to Cart
-                            </a>
+
                             <p><strong>Stock: </strong><?php echo $model->stock ?></p>
                             <!-- <p><strong>Categories: </strong>Fruits, Organic</p> -->
                         </div>
@@ -150,6 +173,17 @@ AppAsset::register($this);
     <!-- end more products -->
 
 
+    <script>
+        $(document).ready(function() {
+            $('#quantityInput').on('input', function() {
+                updateAddToCartForm($(this).val());
+            });
+        });
+
+        function updateAddToCartForm(quantity) {
+            $('#addToCartForm input[name="quantity"]').val(quantity);
+        }
+    </script>
 
 
 
